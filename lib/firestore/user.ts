@@ -1,4 +1,3 @@
-
 import {
   doc,
   getDoc,
@@ -16,6 +15,7 @@ export interface QuizUser {
   email: string;
   answers: (string | null)[];   // Array[15]: null = not answered / skipped
   cumulativeTimeMs: number;     // Total ms taken across answered questions
+  totalScore: number;           // Set by admin portal after manual review
   isAttended: boolean;          // True once quiz is submitted → redirects to /final
   isChecked: boolean;           // Set by admin portal after manual review
   createdAt?: unknown;
@@ -40,6 +40,7 @@ export async function createUser(
       email,
       answers: Array(15).fill(null),
       cumulativeTimeMs: 0,
+      totalScore: 0,
       isAttended: false,
       isChecked: false,
       createdAt: serverTimestamp(),

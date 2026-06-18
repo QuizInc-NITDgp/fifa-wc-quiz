@@ -32,7 +32,6 @@ export default function Timer({
       onTimeUpRef.current();
       return;
     }
-
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1;
@@ -45,63 +44,43 @@ export default function Timer({
         return next;
       });
     }, 1000);
-
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, durationSeconds]);
 
-  const RADIUS = 20;
-  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-  const progress = durationSeconds > 0 ? secondsLeft / durationSeconds : 0;
-  const dashOffset = CIRCUMFERENCE * (1 - progress);
-
   const isUrgent = secondsLeft <= 10;
   const isWarning = secondsLeft <= 30 && !isUrgent;
-  const ringColor = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#F5C518";
+
+  const borderColor = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#22d3ee";
+  const textColor   = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#ffffff";
+  const glowColor   = isUrgent ? "#ef444466" : isWarning ? "#f59e0b44" : "#22d3ee44";
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <div className="relative flex items-center justify-center w-[72px] h-[72px]">
-      <svg viewBox="0 0 48 48" width="72" height="72" className="-rotate-90">
-        <circle
-          cx="24" cy="24" r={RADIUS}
-          fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="3"
-        />
-        <circle
-          cx="24" cy="24" r={RADIUS}
-          fill="none"
-          stroke={ringColor}
-          strokeWidth="3"
-          strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={dashOffset}
-          strokeLinecap="round"
-          style={{
-            transition: "stroke-dashoffset 0.9s linear, stroke 0.3s ease",
-            filter: `drop-shadow(0 0 4px ${ringColor}88)`,
-          }}
-        />
-      </svg>
-
-      <span
-        className="absolute font-mono text-[13px] font-bold tracking-tight"
-        style={{
-          color: isUrgent ? "#ef4444" : "rgba(255,255,255,0.9)",
-          animation: isUrgent ? "timerPulse 0.6s ease-in-out infinite alternate" : "none",
-        }}
-      >
-        {mm}:{ss}
-      </span>
-
-      <style jsx>{`
+    <>
+      {/* Inject keyframes once into the document head — safe in App Router */}
+      <style>{`
         @keyframes timerPulse {
           from { opacity: 1; }
           to   { opacity: 0.4; }
         }
       `}</style>
-    </div>
+
+      <div
+        className="flex items-center justify-center px-4 py-1.5 rounded-full font-mono font-bold text-sm tracking-widest select-none"
+        style={{
+          background: "rgba(0,0,0,0.55)",
+          border: `2px solid ${borderColor}`,
+          color: textColor,
+          boxShadow: `0 0 12px ${glowColor}`,
+          minWidth: "80px",
+          animation: isUrgent ? "timerPulse 0.6s ease-in-out infinite alternate" : "none",
+        }}
+      >
+        {mm}:{ss}
+      </div>
+    </>
   );
 }
