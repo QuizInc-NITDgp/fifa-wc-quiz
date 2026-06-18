@@ -21,65 +21,79 @@ export default function Timer({
 
   useEffect(() => { onTimeUpRef.current = onTimeUp; }, [onTimeUp]);
   useEffect(() => { onTickRef.current = onTick; }, [onTick]);
-
-  useEffect(() => {
-    setSecondsLeft(durationSeconds);
-  }, [durationSeconds]);
+  useEffect(() => { setSecondsLeft(durationSeconds); }, [durationSeconds]);
 
   useEffect(() => {
     if (!isRunning) return;
-    if (secondsLeft <= 0) {
-      onTimeUpRef.current();
-      return;
-    }
+    if (secondsLeft <= 0) { onTimeUpRef.current(); return; }
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1;
         onTickRef.current?.(next);
-        if (next <= 0) {
-          clearInterval(id);
-          onTimeUpRef.current();
-          return 0;
-        }
+        if (next <= 0) { clearInterval(id); onTimeUpRef.current(); return 0; }
         return next;
       });
     }, 1000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, durationSeconds]);
 
   const isUrgent = secondsLeft <= 10;
-  const isWarning = secondsLeft <= 30 && !isUrgent;
+  const isWarning = secondsLeft <= 20 && !isUrgent;
+  const pct = secondsLeft / durationSeconds;
 
-  const borderColor = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#22d3ee";
-  const textColor   = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#ffffff";
-  const glowColor   = isUrgent ? "#ef444466" : isWarning ? "#f59e0b44" : "#22d3ee44";
+  const radius = 20;
+  const circ = 2 * Math.PI * radius;
+  const dash = circ * pct;
+
+  const ringColor = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#3b82f6";
+  const textColor = isUrgent ? "#ef4444" : isWarning ? "#f59e0b" : "#ffffff";
+  const glowColor = isUrgent ? "rgba(239,68,68,0.5)" : isWarning ? "rgba(245,158,11,0.4)" : "rgba(59,130,246,0.4)";
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   return (
     <>
-      {/* Inject keyframes once into the document head — safe in App Router */}
       <style>{`
         @keyframes timerPulse {
-          from { opacity: 1; }
-          to   { opacity: 0.4; }
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        @keyframes urgentGlow {
+          0%,100% { filter: drop-shadow(0 0 4px ${glowColor}); }
+          50% { filter: drop-shadow(0 0 12px ${glowColor}); }
         }
       `}</style>
-
       <div
-        className="flex items-center justify-center px-4 py-1.5 rounded-full font-mono font-bold text-sm tracking-widest select-none"
+        className="relative flex items-center justify-center"
         style={{
-          background: "rgba(0,0,0,0.55)",
-          border: `2px solid ${borderColor}`,
-          color: textColor,
-          boxShadow: `0 0 12px ${glowColor}`,
-          minWidth: "80px",
-          animation: isUrgent ? "timerPulse 0.6s ease-in-out infinite alternate" : "none",
+          animation: isUrgent ? "timerPulse 0.6s ease-in-out infinite" : "none",
         }}
       >
-        {mm}:{ss}
+        <svg width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
+          {/* Track */}
+          <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+          {/* Progress ring */}
+          <circle
+            cx="28" cy="28" r={radius}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circ}`}
+            style={{
+              transition: "stroke-dasharray 1s linear, stroke 0.3s",
+              filter: `drop-shadow(0 0 6px ${glowColor})`,
+            }}
+          />
+        </svg>
+        <div
+          className="absolute inset-0 flex items-center justify-center font-mono font-bold text-[11px] tracking-wider select-none"
+          style={{ color: textColor }}
+        >
+          {mm}:{ss}
+        </div>
       </div>
     </>
   );
