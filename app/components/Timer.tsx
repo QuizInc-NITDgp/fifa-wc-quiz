@@ -25,18 +25,29 @@ export default function Timer({
 
   useEffect(() => {
     if (!isRunning) return;
-    if (secondsLeft <= 0) { onTimeUpRef.current(); return; }
+    if (secondsLeft <= 0) {
+      // Defer to next tick — calling onTimeUp synchronously here updates
+      // the parent (QuizPage) while Timer itself is still rendering,
+      // which React flags as "Cannot update a component while rendering
+      // a different component."
+      const t = setTimeout(() => onTimeUpRef.current(), 0);
+      return () => clearTimeout(t);
+    }
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1;
         onTickRef.current?.(next);
-        if (next <= 0) { clearInterval(id); onTimeUpRef.current(); return 0; }
+        if (next <= 0) {
+          clearInterval(id);
+          setTimeout(() => onTimeUpRef.current(), 0);
+          return 0;
+        }
         return next;
       });
     }, 1000);
     return () => clearInterval(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning, durationSeconds]);
+  }, [isRunning, durationSeconds, secondsLeft]);
 
   const isUrgent = secondsLeft <= 10;
   const isWarning = secondsLeft <= 20 && !isUrgent;
@@ -54,47 +65,22 @@ export default function Timer({
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <>
-      <style>{`
-        @keyframes timerPulse {
-          0%,100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
-        }
-        @keyframes urgentGlow {
-          0%,100% { filter: drop-shadow(0 0 4px ${glowColor}); }
-          50% { filter: drop-shadow(0 0 12px ${glowColor}); }
-        }
-      `}</style>
-      <div
-        className="relative flex items-center justify-center"
-        style={{
-          animation: isUrgent ? "timerPulse 0.6s ease-in-out infinite" : "none",
-        }}
-      >
-        <svg width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
-          {/* Track */}
-          <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-          {/* Progress ring */}
-          <circle
-            cx="28" cy="28" r={radius}
-            fill="none"
-            stroke={ringColor}
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={`${dash} ${circ}`}
-            style={{
-              transition: "stroke-dasharray 1s linear, stroke 0.3s",
-              filter: `drop-shadow(0 0 6px ${glowColor})`,
-            }}
-          />
-        </svg>
-        <div
-          className="absolute inset-0 flex items-center justify-center font-mono font-bold text-[11px] tracking-wider select-none"
-          style={{ color: textColor }}
-        >
-          {mm}:{ss}
-        </div>
+    <div className={`timer-ring-wrap ${isUrgent ? "is-urgent" : ""}`}>
+      <svg className="timer-svg" width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+        <circle
+          cx="28" cy="28" r={radius}
+          fill="none"
+          stroke={ringColor}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+          style={{ filter: `drop-shadow(0 0 6px ${glowColor})` }}
+        />
+      </svg>
+      <div className="timer-text" style={{ color: textColor }}>
+        {mm}:{ss}
       </div>
-    </>
+    </div>
   );
 }
