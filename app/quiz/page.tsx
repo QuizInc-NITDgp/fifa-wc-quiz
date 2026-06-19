@@ -13,7 +13,6 @@ import {
   QuizConfig,
 } from "@/lib/firestore/questions";
 import { createUser, getUser, saveAnswer, submitQuiz } from "@/lib/firestore/user";
-import QuestionCard from "@/app/components/QuestionCard";
 import ProgressBar from "@/app/components/ProgressBar";
 import Timer from "@/app/components/Timer";
 
@@ -92,7 +91,6 @@ function BackgroundLayers() {
   return (
     <>
       <Image src="/bg.jpg" alt="" fill className="object-cover brightness-[0.25] -z-10" priority />
-      {/* Pitch-line overlay */}
       <div className="absolute inset-0 -z-10 opacity-[0.04]"
         style={{
           backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.6) 60px, rgba(255,255,255,0.6) 61px)",
@@ -100,7 +98,6 @@ function BackgroundLayers() {
       />
       <div className="absolute -left-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-blue-600/25 blur-[80px] -z-10" />
       <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-red-600/25 blur-[80px] -z-10" />
-      {/* Center circle hint */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-white/[0.03] -z-10" />
     </>
   );
@@ -116,7 +113,7 @@ export default function QuizPage() {
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<(string | null)[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [answerText, setAnswerText] = useState("");
   const [isLocked, setIsLocked] = useState(false);
   const [cardKey, setCardKey] = useState(0);
 
@@ -198,7 +195,7 @@ export default function QuizPage() {
       setQuizState("done");
       router.replace("/final");
     } else {
-      setSelectedOption(null);
+      setAnswerText("");
       setIsLocked(false);
       setCurrentIdx(nextIdx);
       setCardKey((k) => k + 1);
@@ -209,10 +206,11 @@ export default function QuizPage() {
   }, [uid, currentIdx, answers, questions.length, router]);
 
   const handleSubmit = useCallback(() => {
-    if (isLocked || !selectedOption) return;
+    const trimmed = answerText.trim();
+    if (isLocked || !trimmed) return;
     setIsLocked(true);
-    advanceOrFinish(selectedOption);
-  }, [isLocked, selectedOption, advanceOrFinish]);
+    advanceOrFinish(trimmed);
+  }, [isLocked, answerText, advanceOrFinish]);
 
   const handleSkip = useCallback(() => {
     if (isLocked) return;
@@ -223,8 +221,9 @@ export default function QuizPage() {
   const handleTimeUp = useCallback(() => {
     if (isLocked) return;
     setIsLocked(true);
-    advanceOrFinish(selectedOption);
-  }, [isLocked, selectedOption, advanceOrFinish]);
+    const trimmed = answerText.trim();
+    advanceOrFinish(trimmed.length > 0 ? trimmed : null);
+  }, [isLocked, answerText, advanceOrFinish]);
 
   if (quizState === "loading") return <LoadingScreen message="Setting up your quiz..." />;
   if (quizState === "no-questions") return <NoQuestionsScreen />;
@@ -239,7 +238,7 @@ export default function QuizPage() {
   const answeredCount = answers.filter((a) => a !== null).length;
   const mediaType = currentQuestion.mediaType || (currentQuestion as any).mideaType;
   const hasMedia = !!mediaType && mediaType !== "none" && !!currentQuestion.mediaUrl;
-  const canSubmit = !isLocked && selectedOption;
+  const canSubmit = !isLocked && answerText.trim().length > 0;
   const isLastQuestion = currentIdx === questions.length - 1;
 
   return (
@@ -262,6 +261,12 @@ export default function QuizPage() {
         .btn-submit:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,0.35), 0 4px 12px rgba(239,68,68,0.2); }
         .btn-submit:not(:disabled):active { transform: translateY(0); }
         .btn-skip:not(:disabled):hover { background: rgba(255,255,255,0.08) !important; }
+        .answer-input::placeholder { color: rgba(255,255,255,0.25); }
+        .answer-input:focus {
+          border-color: rgba(59,130,246,0.6) !important;
+          background: rgba(59,130,246,0.05) !important;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.12), 0 0 20px rgba(59,130,246,0.1);
+        }
       `}</style>
 
       <main className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 overflow-x-hidden">
@@ -274,10 +279,8 @@ export default function QuizPage() {
             boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 24px 64px rgba(0,0,0,0.7), 0 0 80px rgba(59,130,246,0.06)",
           }}>
 
-          {/* Top accent line */}
           <div className="h-[2px] w-full" style={{ background: "linear-gradient(90deg, #3b82f6, #ef4444, #3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
 
-          {/* Header */}
           <div className="grid grid-cols-3 items-center px-6 pt-5 pb-3 md:px-8">
             <div className="flex justify-start">
               <Image src="/quizinc.jpg" alt="QuizInc" width={90} height={32} className="object-contain opacity-90" />
@@ -297,18 +300,14 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Progress */}
           <div className="px-6 pb-4 md:px-8">
             <ProgressBar current={currentIdx + 1} total={questions.length} answered={answeredCount} />
           </div>
 
-          {/* Divider */}
           <div className="w-full h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)" }} />
 
-          {/* Body */}
           <div className="p-6 md:p-8 flex flex-col flex-1">
 
-            {/* Question */}
             <div
               key={`q-${cardKey}`}
               className="q-slide w-full rounded-xl p-5 md:p-6 mb-5 relative overflow-hidden"
@@ -317,7 +316,6 @@ export default function QuizPage() {
                 border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
-              {/* Subtle corner accent */}
               <div className="absolute top-0 left-0 w-12 h-12 rounded-br-3xl opacity-30"
                 style={{ background: "radial-gradient(circle at top left, rgba(59,130,246,0.4), transparent)" }} />
               <div className="absolute bottom-0 right-0 w-10 h-10 rounded-tl-3xl opacity-20"
@@ -328,7 +326,6 @@ export default function QuizPage() {
               </p>
             </div>
 
-            {/* Media */}
             {hasMedia && (
               <div className="w-full mb-5 rounded-xl overflow-hidden border border-white/[0.06]"
                 style={{ background: "rgba(0,0,0,0.4)" }}>
@@ -343,22 +340,35 @@ export default function QuizPage() {
               </div>
             )}
 
-            {/* Options */}
-            <div key={`opts-${cardKey}`} className="w-full">
-              <QuestionCard
-                key={currentQuestion.id}
-                question={currentQuestion}
-                selectedAnswer={selectedOption}
-                onSelect={setSelectedOption}
-                isLocked={isLocked}
+            {/* Free-text answer input (replaces multiple-choice options) */}
+            <div key={`input-${cardKey}`} className="w-full flex flex-col gap-2">
+              <label
+                htmlFor={`answer-${currentQuestion.id}`}
+                className="text-[10px] font-bold tracking-widest uppercase text-white/30"
+              >
+                Your Answer
+              </label>
+              <input
+                id={`answer-${currentQuestion.id}`}
+                type="text"
+                value={answerText}
+                onChange={(e) => !isLocked && setAnswerText(e.target.value)}
+                disabled={isLocked}
+                placeholder="Type your answer here..."
+                autoComplete="off"
+                className="answer-input w-full rounded-xl px-5 py-4 text-base font-medium text-white outline-none transition-all duration-200"
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  opacity: isLocked ? 0.5 : 1,
+                  cursor: isLocked ? "not-allowed" : "text",
+                }}
               />
             </div>
 
             <div className="w-full h-px my-6" style={{ background: "rgba(255,255,255,0.05)" }} />
 
-            {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 items-center w-full">
-              {/* Skip */}
               <button
                 onClick={handleSkip}
                 disabled={isLocked}
@@ -372,7 +382,6 @@ export default function QuizPage() {
                 Skip
               </button>
 
-              {/* Submit */}
               <button
                 onClick={handleSubmit}
                 disabled={!canSubmit}

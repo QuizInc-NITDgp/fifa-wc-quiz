@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Drop this ONE component into app/layout.tsx, nothing else.
 // Renders a small football emoji that trails the real cursor with a
@@ -10,8 +10,22 @@ export default function CursorGlow() {
   const dotRef = useRef<HTMLDivElement>(null);
   const pos = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
+  const [enabled, setEnabled] = useState(true);
 
   useEffect(() => {
+    // Skip on touch devices — no mouse to follow, and some mobile
+    // browsers leave it stuck on screen since "mousemove" never fires.
+    const isTouchDevice =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window);
+    if (isTouchDevice) {
+      setEnabled(false);
+      return;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
     const handleMove = (e: MouseEvent) => {
       target.current = { x: e.clientX, y: e.clientY };
     };
@@ -32,7 +46,9 @@ export default function CursorGlow() {
       window.removeEventListener("mousemove", handleMove);
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [enabled]);
+
+  if (!enabled) return null;
 
   return (
     <div

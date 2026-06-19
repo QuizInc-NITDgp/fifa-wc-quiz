@@ -14,9 +14,11 @@ export interface QuizQuestion {
   id: string;
   order: number;
   text: string;
-  options: string[];
   mediaType: MediaType;
   mediaUrl?: string;
+  // `options` removed — questions are now free-text input.
+  // `correctAnswer` intentionally still not included here even if you
+  // add it to Firestore docs later — keeps it server-side only.
 }
 
 export interface QuizConfig {
@@ -31,13 +33,11 @@ export async function fetchQuestions(): Promise<QuizQuestion[]> {
   const snap = await getDocs(q);
   return snap.docs.map((d) => {
     const data = d.data();
-    // Support both "mediaUrl" and "mediaurl" field names in Firestore
     const mediaUrl = data.mediaUrl ?? data.mediaurl ?? "";
     return {
       id: d.id,
       order: data.order ?? 0,
       text: data.text ?? "",
-      options: data.options ?? [],
       mediaType: data.mediaType ?? null,
       mediaUrl,
     } as QuizQuestion;

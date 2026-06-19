@@ -7,24 +7,17 @@ import { auth } from "@/lib/firebase/config";
 import { getUser, QuizUser } from "@/lib/firestore/user";
 import { useRouter } from "next/navigation";
 
-function StatCard({ label, value, accent, span }: { label: string; value: string; accent?: string; span?: boolean }) {
+function StatCard({ label, value, span }: { label: string; value: string; span?: boolean }) {
   return (
     <div
-      className={`rounded-xl p-4 flex flex-col gap-1.5 border border-white/[0.06] transition-all hover:border-white/10 ${span ? "col-span-2" : ""}`}
-      style={{ background: "rgba(255,255,255,0.03)" }}
+      className={`rounded-xl px-5 py-4 flex flex-col gap-1 border transition-all ${span ? "col-span-2" : ""}`}
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        borderColor: "rgba(255,255,255,0.06)",
+      }}
     >
-      <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-white/30">{label}</span>
-      <span
-        className="text-2xl font-black font-mono tracking-wide"
-        style={{
-          background: accent || "linear-gradient(135deg, #3b82f6, #ef4444)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-        }}
-      >
-        {value}
-      </span>
+      <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-white/30">{label}</span>
+      <span className="text-xl font-bold font-mono tracking-wide text-white/90">{value}</span>
     </div>
   );
 }
@@ -42,7 +35,7 @@ export default function FinalPage() {
       if (!data?.isAttended) { router.replace("/quiz"); return; }
       setUser(data);
       setLoading(false);
-      setTimeout(() => setConfetti(true), 400);
+      setTimeout(() => setConfetti(true), 300);
     });
     return () => unsub();
   }, [router]);
@@ -51,7 +44,7 @@ export default function FinalPage() {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ background: "#06091a" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <div className="w-10 h-10 rounded-full" style={{ border: "2px solid rgba(255,255,255,0.05)", borderTopColor: "#3b82f6", animation: "spin 0.9s linear infinite" }} />
+        <div className="w-9 h-9 rounded-full" style={{ border: "2px solid rgba(255,255,255,0.06)", borderTopColor: "#3b82f6", animation: "spin 0.9s linear infinite" }} />
       </main>
     );
   }
@@ -62,6 +55,7 @@ export default function FinalPage() {
   const ss = String(totalSec % 60).padStart(2, "0");
   const skipped = 15 - answeredCount;
   const firstName = user?.displayName?.split(" ")[0] ?? "Champ";
+  const completionPct = Math.round((answeredCount / 15) * 100);
 
   return (
     <>
@@ -71,32 +65,24 @@ export default function FinalPage() {
           100% { background-position:  200% center; }
         }
         @keyframes panelIn {
-          from { opacity: 0; transform: translateY(24px) scale(0.98); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes trophyBounce {
-          0%,100% { transform: translateY(0) rotate(0deg); }
-          25%     { transform: translateY(-6px) rotate(-3deg); }
-          75%     { transform: translateY(-3px) rotate(2deg); }
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes statIn {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes confettiFall {
           0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
           100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
-        .panel-in { animation: panelIn 0.55s cubic-bezier(0.22,1,0.36,1) both; }
-        .trophy   { animation: trophyBounce 2s ease-in-out infinite; display:inline-block; }
+        .panel-in { animation: panelIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
         .stat-in  { animation: statIn 0.4s ease-out both; }
-        .stat-in:nth-child(1) { animation-delay: 0.3s; }
-        .stat-in:nth-child(2) { animation-delay: 0.4s; }
-        .stat-in:nth-child(3) { animation-delay: 0.5s; }
+        .stat-in:nth-child(1) { animation-delay: 0.25s; }
+        .stat-in:nth-child(2) { animation-delay: 0.32s; }
+        .stat-in:nth-child(3) { animation-delay: 0.39s; }
         .confetti-piece {
           position: fixed;
-          width: 8px;
-          height: 8px;
           border-radius: 2px;
           animation: confettiFall linear forwards;
           pointer-events: none;
@@ -104,8 +90,8 @@ export default function FinalPage() {
         }
       `}</style>
 
-      {/* Confetti */}
-      {confetti && Array.from({ length: 28 }).map((_, i) => (
+      {/* Celebration confetti on load */}
+      {confetti && Array.from({ length: 24 }).map((_, i) => (
         <div
           key={i}
           className="confetti-piece"
@@ -113,74 +99,87 @@ export default function FinalPage() {
             left: `${Math.random() * 100}%`,
             top: `-${Math.random() * 20}px`,
             background: i % 3 === 0 ? "#3b82f6" : i % 3 === 1 ? "#ef4444" : "#F5C518",
-            animationDuration: `${2 + Math.random() * 2.5}s`,
-            animationDelay: `${Math.random() * 0.8}s`,
-            width: `${6 + Math.random() * 6}px`,
-            height: `${6 + Math.random() * 6}px`,
+            animationDuration: `${2.2 + Math.random() * 2}s`,
+            animationDelay: `${Math.random() * 0.6}s`,
+            width: `${5 + Math.random() * 5}px`,
+            height: `${5 + Math.random() * 5}px`,
             borderRadius: Math.random() > 0.5 ? "50%" : "2px",
-            opacity: 0.9,
+            opacity: 0.85,
           }}
         />
       ))}
 
       <main className="relative min-h-screen flex items-center justify-center overflow-hidden p-4">
         {/* BG */}
-        <Image src="/bg.jpg" alt="" fill className="object-cover brightness-[0.22] -z-10" priority />
-        <div className="absolute inset-0 -z-10 opacity-[0.03]"
+        <Image src="/bg.jpg" alt="" fill className="object-cover brightness-[0.18] -z-10" priority />
+        <div className="absolute inset-0 -z-10 opacity-[0.025]"
           style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(255,255,255,0.8) 60px,rgba(255,255,255,0.8) 61px)" }} />
-        <div className="absolute -left-40 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-blue-700/20 blur-[100px] -z-10" />
-        <div className="absolute -right-40 top-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-red-700/20 blur-[100px] -z-10" />
+        <div className="absolute -left-40 top-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-blue-700/10 blur-[110px] -z-10" />
+        <div className="absolute -right-40 top-1/2 -translate-y-1/2 w-[480px] h-[480px] rounded-full bg-red-700/10 blur-[110px] -z-10" />
 
-        <div className="panel-in w-full max-w-3xl rounded-2xl overflow-hidden border border-white/[0.07] shadow-2xl"
-          style={{ background: "rgba(6,9,26,0.9)", backdropFilter: "blur(24px)", boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.8)" }}>
+        <div className="panel-in w-full max-w-lg rounded-2xl overflow-hidden border border-white/[0.06] shadow-2xl"
+          style={{ background: "rgba(7,10,24,0.92)", backdropFilter: "blur(28px)", boxShadow: "0 0 0 1px rgba(255,255,255,0.03), 0 40px 100px rgba(0,0,0,0.85)" }}>
 
           {/* Top bar */}
-          <div className="h-[2px]" style={{ background: "linear-gradient(90deg,#3b82f6,#ef4444,#3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
+          <div className="h-px" style={{ background: "linear-gradient(90deg,transparent,#3b82f6,#ef4444,transparent)", backgroundSize: "200% 100%", animation: "shimmer 5s linear infinite" }} />
 
-          <div className="p-7 md:p-10 flex flex-col gap-8">
+          <div className="px-7 md:px-10 pt-8 pb-9 flex flex-col gap-9">
 
-            {/* Logo */}
+            {/* Header row */}
             <div className="flex items-center justify-between">
-              <Image src="/quizinc.jpg" alt="QuizInc" width={70} height={26} className="object-contain opacity-70" />
-              <span className="text-[10px] text-white/20 font-mono uppercase tracking-widest">FIFA WC Quiz</span>
+              <Image src="/quizinc.jpg" alt="QuizInc" width={64} height={24} className="object-contain opacity-50" />
+              <span className="text-[9px] text-white/25 font-mono uppercase tracking-[0.25em]">FIFA WC Quiz</span>
             </div>
 
-            {/* Hero */}
-            <div className="text-center flex flex-col items-center gap-4">
-              <div className="trophy text-3xl md:text-4xl  text-amber-300 ">🏆FIFA WC QUIZ🏆</div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-                  Full Time!
-                </h1>
-                <p className="text-white/40 text-sm mt-1.5">
-                  Great match,{" "}
-                  <span className="text-white/70 font-semibold">{firstName}</span>
-                  {" "}— your answers are in.
-                </p>
+            {/* Hero: progress bar + headline */}
+            <div className="flex flex-col items-center gap-5 w-full">
+
+              {/* Completion progress bar */}
+              <div className="w-full max-w-xs flex flex-col gap-1.5">
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                      width: `${completionPct}%`,
+                      background: "linear-gradient(90deg, #2563eb, #dc2626)",
+                      boxShadow: "0 0 10px rgba(37,99,235,0.5)",
+                    }}
+                  />
+                </div>
+                <p className="text-[11px] text-white/25 font-mono text-center">{completionPct}% complete</p>
               </div>
 
-              {/* Score bar */}
-              <div className="w-full max-w-xs h-2 rounded-full overflow-hidden mt-1"
-                style={{ background: "rgba(255,255,255,0.06)" }}>
-                <div
-                  className="h-full rounded-full transition-all duration-1000"
+              <div className="text-center">
+                <div className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2"
                   style={{
-                    width: `${(answeredCount / 15) * 100}%`,
-                    background: "linear-gradient(90deg, #2563eb, #dc2626)",
-                    boxShadow: "0 0 10px rgba(37,99,235,0.5)",
-                  }}
-                />
+                    background: "linear-gradient(135deg, #60a5fa, #f87171)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}>
+                  🏆 FIFA WC Quiz
+                </div>
+                <h1 className="text-2xl md:text-[1.75rem] font-bold text-white tracking-tight leading-snug">
+                  Nice work, <span style={{
+                    background: "linear-gradient(135deg, #60a5fa, #f87171)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}>{firstName}</span>
+                </h1>
+                <p className="text-white/35 text-[13px] mt-1.5 leading-relaxed">
+                  Your answers have been submitted for review.
+                </p>
               </div>
-              <p className="text-[11px] text-white/25 -mt-1 font-mono">{answeredCount} of 15 answered</p>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 w-full">
+            <div className="grid grid-cols-2 gap-2.5 w-full">
               <div className="stat-in">
                 <StatCard label="Answered" value={`${answeredCount} / 15`} />
               </div>
               <div className="stat-in">
-                <StatCard label="Skipped" value={`${skipped}`} accent="linear-gradient(135deg,#f59e0b,#ef4444)" />
+                <StatCard label="Skipped" value={`${skipped}`} />
               </div>
               <div className="stat-in col-span-2">
                 <StatCard label="Time Taken" value={`${mm}:${ss}`} span />
@@ -188,11 +187,10 @@ export default function FinalPage() {
             </div>
 
             {/* Notice */}
-            <div className="rounded-xl px-5 py-4 border border-blue-500/10 text-center"
-              style={{ background: "rgba(59,130,246,0.04)" }}>
-              <p className="text-white/35 text-xs leading-relaxed">
-                🔍 Your answers have been recorded and will be verified by our team.
-                Results and leaderboard will be announced shortly.
+            <div className="rounded-xl px-5 py-3.5 border text-center"
+              style={{ background: "rgba(255,255,255,0.015)", borderColor: "rgba(255,255,255,0.05)" }}>
+              <p className="text-white/30 text-[12px] leading-relaxed">
+                Results will be verified by our team and the leaderboard announced shortly.
               </p>
             </div>
 
