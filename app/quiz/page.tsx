@@ -19,6 +19,25 @@ import Timer from "@/app/components/Timer";
 const FALLBACK_PER_Q_SECONDS = 45;
 type QuizState = "loading" | "closed" | "active" | "done" | "no-questions";
 
+// ── Tab-switch anti-cheat helpers ───────────────────────────────────────────
+// Persisted in sessionStorage (not just a ref) so that refreshing the page
+// can't be used to reset the violation count mid-quiz. It naturally clears
+// when the browser tab/session ends.
+const TAB_SWITCH_STORAGE_PREFIX = "fifa-wc-quiz:tabSwitchCount:";
+
+function getTabSwitchCount(uid: string): number {
+  if (typeof window === "undefined") return 0;
+  return parseInt(sessionStorage.getItem(`${TAB_SWITCH_STORAGE_PREFIX}${uid}`) || "0", 10);
+}
+
+function bumpTabSwitchCount(uid: string): number {
+  const next = getTabSwitchCount(uid) + 1;
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem(`${TAB_SWITCH_STORAGE_PREFIX}${uid}`, String(next));
+  }
+  return next;
+}
+
 function LoadingScreen({ message }: { message: string }) {
   return (
     <main className="min-h-screen flex items-center justify-center" style={{ background: "#06091a" }}>
@@ -122,6 +141,11 @@ export default function QuizPage() {
   const [perQSeconds, setPerQSeconds] = useState(FALLBACK_PER_Q_SECONDS);
   const [timerKey, setTimerKey] = useState(0);
 
+  // ── Tab-switch anti-cheat ──────────────────────────────────────────────
+  const [tabWarning, setTabWarning] = useState(false);
+  const endingDueToViolation = useRef(false);
+
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.replace("/"); return; }
@@ -205,6 +229,30 @@ export default function QuizPage() {
     }
   }, [uid, currentIdx, answers, questions.length, router]);
 
+  // Called on the 2nd tab-switch violation: locks the quiz immediately and
+  // submits whatever has been answered so far (same as a normal finish).
+  const forceEndQuiz = useCallback(async () => {
+    if (!uid || questions.length === 0 || endingDueToViolation.current) return;
+    endingDueToViolation.current = true;
+    setIsLocked(true);
+
+    const elapsedMs = Date.now() - questionStartMs.current;
+    const trimmed = answerText.trim();
+    const updatedAnswers = [...answers];
+    if (trimmed.length > 0) updatedAnswers[currentIdx] = trimmed; // count what they'd already typed
+    const totalTimeMs = cumulativeMs.current + elapsedMs;
+
+    try {
+      await submitQuiz(uid, updatedAnswers, totalTimeMs);
+    } catch (err) {
+      console.error("Auto-submit after tab-switch violation failed:", err);
+    }
+
+    setAnswers(updatedAnswers);
+    setQuizState("done");
+    router.replace("/final");
+  }, [uid, questions.length, answerText, answers, currentIdx, router]);
+
   const handleSubmit = useCallback(() => {
     const trimmed = answerText.trim();
     if (isLocked || !trimmed) return;
@@ -224,6 +272,27 @@ export default function QuizPage() {
     const trimmed = answerText.trim();
     advanceOrFinish(trimmed.length > 0 ? trimmed : null);
   }, [isLocked, answerText, advanceOrFinish]);
+
+  // Tab-switch detection: only watches while the quiz is actually in
+  // progress. 1st time tab/window is left → show warning. 2nd time →
+  // auto-submit and end the quiz.
+  useEffect(() => {
+    if (quizState !== "active" || !uid) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return; // only care about leaving, not returning
+      const count = bumpTabSwitchCount(uid);
+      if (count === 1) {
+        setTabWarning(true);
+      } else if (count >= 2) {
+        setTabWarning(false);
+        forceEndQuiz();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [quizState, uid, forceEndQuiz]);
 
   if (quizState === "loading") return <LoadingScreen message="Setting up your quiz..." />;
   if (quizState === "no-questions") return <NoQuestionsScreen />;
@@ -271,6 +340,37 @@ export default function QuizPage() {
 
       <main className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-6 overflow-x-hidden">
         <BackgroundLayers />
+
+        {tabWarning && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)" }}
+          >
+            <div
+              className="max-w-sm w-full rounded-2xl p-7 text-center border shadow-2xl"
+              style={{ background: "rgba(12,6,6,0.95)", borderColor: "rgba(239,68,68,0.3)" }}
+            >
+              <div className="text-5xl mb-4">⚠️</div>
+              <h2 className="text-white text-lg font-black mb-2 tracking-tight">Tab Switch Detected</h2>
+              <p className="text-white/60 text-sm leading-relaxed mb-6">
+                Leaving this tab isn&apos;t allowed during the quiz. If you switch tabs or windows{" "}
+                <span className="text-red-400 font-semibold">one more time</span>, your quiz will be{" "}
+                <span className="text-red-400 font-semibold">submitted immediately</span> with only the questions you&apos;ve answered so far.
+              </p>
+              <button
+                onClick={() => setTabWarning(false)}
+                className="w-full py-3.5 rounded-xl font-black text-xs tracking-widest uppercase transition-all"
+                style={{
+                  background: "linear-gradient(135deg, #2563eb 0%, #dc2626 100%)",
+                  color: "#ffffff",
+                  border: "1px solid rgba(59,130,246,0.4)",
+                }}
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="panel-in w-full max-w-3xl flex flex-col rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden"
           style={{
