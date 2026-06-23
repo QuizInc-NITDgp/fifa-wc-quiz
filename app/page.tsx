@@ -3,7 +3,7 @@ import Image from "next/image";
 import { auth } from "@/lib/firebase/config";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { createUser } from "@/lib/firestore/user";
+import { createUser, getUser } from "@/lib/firestore/user";
 import { useState } from "react";
 
 export default function LoginPage() {
@@ -22,7 +22,8 @@ export default function LoginPage() {
         result.user.displayName || "Anonymous",
         result.user.email || ""
       );
-      router.push("/instructions");
+      const userData = await getUser(result.user.uid);
+      router.push(userData?.isAttended ? "/final" : "/instructions");
     } catch (error: any) {
       if (error.code === "auth/cancelled-popup-request") return;
       if (error.code === "auth/popup-closed-by-user") { setIsSigningIn(false); return; }

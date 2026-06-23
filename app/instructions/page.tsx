@@ -2,8 +2,10 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase/config";
+import { auth, db } from "@/lib/firebase/config";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { getUser } from "@/lib/firestore/user";
 
 const RULES = [
   { icon: "📋", text: "There are 15 questions in total — all must be answered within the quiz window." },
@@ -13,18 +15,27 @@ const RULES = [
   { icon: "⏱️", text: "Your cumulative time is recorded and used for leaderboard ranking." },
 ];
 
-const BADGES = [
-  { icon: "⚠️", label: "No skipping", color: "text-yellow-400" },
-  { icon: "🔄", label: "No going back", color: "text-blue-400" },
-  { icon: "✅", label: "One attempt", color: "text-green-400" },
-];
+
 
 export default function InstructionsPage() {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState<string>("--:--:--");
   const [expired, setExpired] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  // Guard: must be signed in, and must not have already attempted the quiz.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { router.replace("/"); return; }
+      const userData = await getUser(user.uid);
+      if (userData?.isAttended) { router.replace("/final"); return; }
+      setCheckingAccess(false);
+    });
+    return () => unsub();
+  }, [router]);
 
   useEffect(() => {
+    if (checkingAccess) return;
     const fetchAndStartTimer = async () => {
       const snap = await getDoc(doc(db, "config", "quizWindow"));
       if (!snap.exists()) return;
@@ -40,7 +51,16 @@ export default function InstructionsPage() {
       return () => clearInterval(interval);
     };
     fetchAndStartTimer();
-  }, []);
+  }, [checkingAccess]);
+
+  if (checkingAccess) {
+    return (
+      <main className="min-h-screen flex items-center justify-center" style={{ background: "#06091a" }}>
+        <div className="w-9 h-9 rounded-full" style={{ border: "2px solid rgba(255,255,255,0.06)", borderTopColor: "#3b82f6", animation: "spin 0.9s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -133,17 +153,7 @@ export default function InstructionsPage() {
               ))}
             </div>
 
-            {/* Badges */}
-            <div className="flex items-center justify-center gap-2 flex-wrap rounded-xl px-4 py-3.5 border border-white/[0.05]"
-              style={{ background: "rgba(255,255,255,0.02)" }}>
-              {BADGES.map((b, i) => (
-                <span key={i} className="flex items-center gap-1.5 text-xs font-semibold">
-                  <span>{b.icon}</span>
-                  <span className={b.color}>{b.label}</span>
-                  {i < BADGES.length - 1 && <span className="text-white/10 ml-2">|</span>}
-                </span>
-              ))}
-            </div>
+            
 
             {/* Buttons */}
             <div className="flex gap-3 mt-1">
