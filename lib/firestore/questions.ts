@@ -16,14 +16,11 @@ export interface QuizQuestion {
   text: string;
   mediaType: MediaType;
   mediaUrl?: string;
-  // `options` removed — questions are now free-text input.
-  // `correctAnswer` intentionally still not included here even if you
-  // add it to Firestore docs later — keeps it server-side only.
 }
 
 export interface QuizConfig {
-  windowStart: string;
-  windowEnd: string;
+  windowStart: any;
+  windowEnd: any;
   totalQuestions: number;
   perQuestionSeconds: number;
 }
@@ -48,6 +45,14 @@ export async function fetchQuizConfig(): Promise<QuizConfig | null> {
   const snap = await getDoc(doc(db, "config", "quiz"));
   if (!snap.exists()) return null;
   return snap.data() as QuizConfig;
+}
+
+// Fetch the quiz window (config/quizWindow) — same doc the instructions page uses
+export async function fetchQuizWindow(): Promise<{ endTime: Date } | null> {
+  const snap = await getDoc(doc(db, "config", "quizWindow"));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return { endTime: data.endTime.toDate() };
 }
 
 export function isWindowOpen(config: QuizConfig): boolean {

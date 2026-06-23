@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase/config";
 import {
   fetchQuestions,
   fetchQuizConfig,
+  fetchQuizWindow,
   isWindowOpen,
   QuizQuestion,
   QuizConfig,
@@ -152,9 +153,10 @@ export default function QuizPage() {
       setUid(user.uid);
       try {
         let userData = await getUser(user.uid);
-        const [fetchedQuestions, fetchedConfig] = await Promise.all([
+        const [fetchedQuestions, fetchedConfig, quizWindow] = await Promise.all([
           fetchQuestions(),
           fetchQuizConfig(),
+          fetchQuizWindow(),
         ]);
 
         if (!userData && fetchedQuestions) {
@@ -164,13 +166,14 @@ export default function QuizPage() {
 
         if (userData?.isAttended) { router.replace("/final"); return; }
 
+        // Check quiz window exactly as instructions page does
+        if (!quizWindow || quizWindow.endTime.getTime() < Date.now()) {
+          router.replace("/instructions");
+          return;
+        }
+
         if (fetchedConfig) {
           setPerQSeconds(fetchedConfig.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
-          if (!isWindowOpen(fetchedConfig)) {
-            setConfig(fetchedConfig);
-            setQuizState("closed");
-            return;
-          }
         }
 
         if (!fetchedQuestions || fetchedQuestions.length === 0) {
