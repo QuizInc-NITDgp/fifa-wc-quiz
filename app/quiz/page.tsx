@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+
 import {
   fetchQuestions,
   fetchQuizConfig,
@@ -147,63 +150,47 @@ export default function QuizPage() {
   const endingDueToViolation = useRef(false);
 
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.replace("/"); return; }
-      setUid(user.uid);
-      try {
-        let userData = await getUser(user.uid);
-        const [fetchedQuestions, fetchedConfig, quizWindow] = await Promise.all([
-          fetchQuestions(),
-          fetchQuizConfig(),
-          fetchQuizWindow(),
-        ]);
+  // Add this inside your quiz page's auth useEffect, replacing the existing one.
+// This guards against direct URL access before quiz starts or after it ends.
 
-        if (!userData && fetchedQuestions) {
-          await createUser(user.uid, user.displayName || "Anonymous", user.email || "");
-          userData = await getUser(user.uid);
-        }
+useEffect(() => {
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    if (!user) { router.replace("/"); return; }
+    const userData = await getUser(user.uid);
+    if (userData?.isAttended) { router.replace("/final"); return; }
+    if (!userData?.phone) { router.replace("/profile"); return; }
 
-        if (userData?.isAttended) { router.replace("/final"); return; }
+    setUid(user.uid);
 
-        // Check quiz window exactly as instructions page does
-        if (!quizWindow || quizWindow.endTime.getTime() < Date.now()) {
-          router.replace("/instructions");
-          return;
-        }
+    try {
+      const snap = await getDoc(doc(db, "config", "quizWindow"));
+      if (snap.exists()) {
+        const data = snap.data();
+        const now = Date.now();
+        const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
+        const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
 
-        if (fetchedConfig) {
-          setPerQSeconds(fetchedConfig.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
-        }
+        if (startTime && now < startTime) { router.replace("/instructions"); return; }
+        if (endTime && now > endTime) { router.replace("/instructions"); return; }
 
-        if (!fetchedQuestions || fetchedQuestions.length === 0) {
-          setQuizState("no-questions");
-          return;
-        }
-
-        setQuestions(fetchedQuestions);
-        setConfig(fetchedConfig);
-
-        if (userData?.cumulativeTimeMs) cumulativeMs.current = userData.cumulativeTimeMs;
-
-        if (userData?.answers && userData.answers.length > 0) {
-          setAnswers(userData.answers);
-          const first = userData.answers.findIndex((a) => a === null);
-          setCurrentIdx(Math.max(0, Math.min(first === -1 ? fetchedQuestions.length - 1 : first, fetchedQuestions.length - 1)));
-        } else {
-          setAnswers(Array(fetchedQuestions.length).fill(null));
-          setCurrentIdx(0);
-        }
-
-        questionStartMs.current = Date.now();
-        setTimerKey((k) => k + 1);
-        setQuizState("active");
-      } catch (err) {
-        console.error("Quiz init error:", err);
+        setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
       }
-    });
-    return () => unsub();
-  }, [router]);
+
+      const qs = await fetchQuestions();
+      if (qs.length === 0) { setQuizState("no-questions"); return; }
+
+      setQuestions(qs);
+      setAnswers(Array(qs.length).fill(null));
+      questionStartMs.current = Date.now();
+      setQuizState("active");
+
+    } catch (err) {
+      console.error("Failed to load quiz:", err);
+      setQuizState("closed");
+    }
+  });
+  return () => unsub();
+}, [router]);
 
   const advanceOrFinish = useCallback(async (chosenAnswer: string | null) => {
     if (!uid || questions.length === 0) return;

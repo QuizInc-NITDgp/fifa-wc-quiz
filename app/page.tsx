@@ -1,10 +1,13 @@
 "use client";
 import Image from "next/image";
 import { auth } from "@/lib/firebase/config";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { createUser, getUser } from "@/lib/firestore/user";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast";
+
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,7 +26,15 @@ export default function LoginPage() {
         result.user.email || ""
       );
       const userData = await getUser(result.user.uid);
-      router.push(userData?.isAttended ? "/final" : "/instructions");
+
+      if (userData?.isAttended) {
+        router.push("/final");
+      } else if (!userData?.phone) {
+        // Profile not complete yet
+        router.push("/profile");
+      } else {
+        router.push("/instructions");
+      }
     } catch (error: any) {
       if (error.code === "auth/cancelled-popup-request") return;
       if (error.code === "auth/popup-closed-by-user") { setIsSigningIn(false); return; }
@@ -32,9 +43,47 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+
+      // Make sure the Firestore doc exists with the full schema before
+      // we ever check fields on it — prevents partial/broken docs.
+      await createUser(user.uid, user.displayName || "Anonymous", user.email || "");
+      const userData = await getUser(user.uid);
+
+      if (userData?.isAttended) {
+        toast.success("Already attended! Redirecting...", { icon: "🏆" });
+        setTimeout(() => router.push("/final"), 1500);
+        return;
+      }
+      if (!userData?.phone) {
+        toast("Complete your profile first!", { icon: "👤" });
+        setTimeout(() => router.push("/profile"), 1500);
+        return;
+      }
+      toast.success("Already logged in! Moving to instructions...", { icon: "⚽" });
+      setTimeout(() => router.push("/instructions"), 1500);
+    });
+    return () => unsub();
+  }, []);
 
   return (
     <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "rgba(6,9,26,0.95)",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(12px)",
+            fontSize: "13px",
+            fontWeight: "600",
+          },
+          duration: 3000,
+        }}
+      />
       <style>{`
         @keyframes shimmer {
           0%   { background-position: -200% center; }
@@ -48,6 +97,7 @@ export default function LoginPage() {
           from { opacity: 0; transform: translateX(-12px); }
           to   { opacity: 1; transform: translateX(0); }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .panel-in   { animation: panelIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
         .login-item { animation: itemIn 0.4s ease-out both; }
         .login-item:nth-child(1) { animation-delay: 0.1s; }
@@ -59,19 +109,18 @@ export default function LoginPage() {
         <Image src="/bg.jpg" alt="background" fill className="object-cover brightness-[0.22] -z-10" priority />
         <div className="absolute inset-0 -z-10 opacity-[0.035]"
           style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(255,255,255,0.8) 60px,rgba(255,255,255,0.8) 61px)" }} />
-        
+
         <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-red-700/15 blur-[100px] -z-10" />
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-blue-700/15 blur-[100px] -z-10" />
 
         <div className="panel-in relative flex flex-col md:flex-row max-w-3xl w-full rounded-2xl overflow-hidden border border-white/[0.07] shadow-2xl"
           style={{ background: "rgba(6, 9, 26, 0.88)", backdropFilter: "blur(24px)", boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.8)" }}>
-          
-          <div className="absolute top-0 left-0 right-0 h-[2px] z-10" 
+
+          <div className="absolute top-0 left-0 right-0 h-[2px] z-10"
             style={{ background: "linear-gradient(90deg,#3b82f6,#ef4444,#3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
 
           <div className="relative flex-1 min-h-[300px] md:min-h-[460px] w-full">
             <Image src="/photo.jpeg" alt="football legends" fill className="object-cover opacity-90" priority />
-            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-transparent to-transparent" />
             <div className="absolute inset-0 border-r border-white/[0.05]" />
           </div>
 
@@ -143,7 +192,6 @@ export default function LoginPage() {
                 )}
               </button>
 
-              {/* Popup blocked warning */}
               {popupBlocked && (
                 <p className="text-red-400 text-[11px] text-center leading-relaxed">
                   ⚠️ Popup was blocked. Please click the popup icon in your address bar and allow popups for this site, then try again.
@@ -161,9 +209,6 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
-
-      {/* Spinner keyframe */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   );
 }

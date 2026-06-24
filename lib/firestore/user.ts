@@ -13,16 +13,17 @@ export interface QuizUser {
   uid: string;
   displayName: string;
   email: string;
-  answers: (string | null)[];   // Array[15]: null = not answered / skipped
-  cumulativeTimeMs: number;     // Total ms taken across answered questions
-  totalScore: number;           // Set by admin portal after manual review
-  isAttended: boolean;          // True once quiz is submitted → redirects to /final
-  isChecked: boolean;           // Set by admin portal after manual review
+  phone: string;           // With country code e.g. +91XXXXXXXXXX
+  answers: (string | null)[];
+  cumulativeTimeMs: number;
+  totalScore: number;
+  isAttended: boolean;
+  isChecked: boolean;
   createdAt?: unknown;
   submittedAt?: unknown;
 }
 
-// ─── Create or update user on login ──────────────────────────────────────────
+// ─── Create user on first login ───────────────────────────────────────────────
 
 export async function createUser(
   uid: string,
@@ -33,11 +34,11 @@ export async function createUser(
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    // First time — initialize full schema
     const newUser: QuizUser = {
       uid,
       displayName,
       email,
+      phone: "",
       answers: Array(15).fill(null),
       cumulativeTimeMs: 0,
       totalScore: 0,
@@ -48,7 +49,15 @@ export async function createUser(
     };
     await setDoc(ref, newUser);
   }
-  // Returning user: don't overwrite their existing data
+}
+
+// ─── Save profile (phone only) ────────────────────────────────────────────────
+
+export async function saveProfile(
+  uid: string,
+  phone: string
+): Promise<void> {
+  await setDoc(doc(db, "users", uid), { phone }, { merge: true });
 }
 
 // ─── Fetch user ───────────────────────────────────────────────────────────────
@@ -60,8 +69,6 @@ export async function getUser(uid: string): Promise<QuizUser | null> {
 }
 
 // ─── Save a single answer ─────────────────────────────────────────────────────
-// answerIndex: 0-based (question 1 → index 0)
-// timeSpentMs: ms the user spent on this specific question
 
 export async function saveAnswer(
   uid: string,
@@ -74,16 +81,17 @@ export async function saveAnswer(
   if (!snap.exists()) return;
 
   const data = snap.data() as QuizUser;
-  const updatedAnswers = [...data.answers];
+  const existingAnswers = Array.isArray(data.answers) ? data.answers : Array(15).fill(null);
+  const updatedAnswers = [...existingAnswers];
   updatedAnswers[answerIndex] = answer;
 
   await updateDoc(ref, {
     answers: updatedAnswers,
-    cumulativeTimeMs: data.cumulativeTimeMs + timeSpentMs,
+    cumulativeTimeMs: (data.cumulativeTimeMs ?? 0) + timeSpentMs,
   });
 }
 
-// ─── Submit quiz (mark attended) ──────────────────────────────────────────────
+// ─── Submit quiz ──────────────────────────────────────────────────────────────
 
 export async function submitQuiz(
   uid: string,
