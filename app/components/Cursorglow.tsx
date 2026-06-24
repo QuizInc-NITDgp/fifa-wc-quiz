@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Drop this ONE component into app/layout.tsx, nothing else.
-// Renders a small football emoji that trails the real cursor with a
+// Renders a small football image that trails the real cursor with a
 // red/blue glow underneath it — the real system cursor stays visible too.
 
 export default function CursorGlow() {
@@ -77,7 +77,7 @@ export default function CursorGlow() {
           mixBlendMode: "screen",
         }}
       />
-      {/* Football */}
+      {/* Trionda Ball Image Container */}
       <div
         style={{
           position: "relative",
@@ -86,11 +86,18 @@ export default function CursorGlow() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "20px",
           filter: "drop-shadow(0 0 6px rgba(239,68,68,0.5)) drop-shadow(0 0 6px rgba(59,130,246,0.5))",
         }}
       >
-        ⚽
+        <img 
+          src="./trionda1.png" 
+          alt="Trionda Ball"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain"
+          }}
+        />
       </div>
     </div>
   );

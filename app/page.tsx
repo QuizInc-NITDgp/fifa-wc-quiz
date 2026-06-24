@@ -135,10 +135,6 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between">
               <Image src="/quizinc.jpg" alt="QuizInc logo" width={85} height={32} className="object-contain opacity-85 bg-transparent" />
-              <div className="inline-flex items-center gap-1.5">
-                <span className="text-base">⚽</span>
-                <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-blue-400/90">FIFA World Cup</span>
-              </div>
             </div>
 
             <div>
@@ -151,16 +147,16 @@ export default function LoginPage() {
                   backgroundClip: "text",
                 }}>BACK</span>
               </h1>
-              <p className="text-gray-400 text-xs mt-2 font-medium tracking-wide">
-                Test your sports knowledge & claim your spot on the leaderboard!
+              <p className="text-gray-400 text-[14px] mt-2 font-medium tracking-wide">
+               Think you know ball? Put your knowledge to test and claim a spot in the finals.
               </p>
             </div>
 
             <div className="flex flex-col gap-2">
               {[
-                "Compete with fans worldwide.",
-                "Answer rapid-fire quizzes.",
-                "Climb the global leaderboard.",
+                "Compete with fans worldwide",
+                "Answer rapid-fire quizzes",
+                "Climb the global leaderboard",
               ].map((text, i) => (
                 <div key={i} className="login-item flex items-center gap-3 rounded-xl px-3.5 py-2.5 border border-white/[0.04] group hover:border-blue-500/15 hover:bg-blue-500/[0.02] transition-all duration-200"
                   style={{ background: "rgba(255,255,255,0.01)" }}>
@@ -205,12 +201,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <p className="text-gray-500 text-[10px] text-center leading-relaxed font-medium">
-                By signing in you agree to our{" "}
-                <span className="text-blue-400/80 hover:text-blue-400 underline cursor-pointer transition-colors">Terms of Service</span>
-                {" "}&{" "}
-                <span className="text-blue-400/80 hover:text-blue-400 underline cursor-pointer transition-colors">Privacy Policy</span>
-              </p>
+             
             </div>
 
           </div>

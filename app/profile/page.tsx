@@ -8,7 +8,7 @@ import { createUser, getUser, saveProfile } from "@/lib/firestore/user";
 
 const COUNTRY_CODES = [
   { code: "+91", flag: "🇮🇳", name: "India" },
-  { code: "+1",  flag: "🇺🇸", name: "USA" },
+  { code: "+1", flag: "🇺🇸", name: "USA" },
   { code: "+44", flag: "🇬🇧", name: "UK" },
   { code: "+61", flag: "🇦🇺", name: "Australia" },
   { code: "+971", flag: "🇦🇪", name: "UAE" },
@@ -25,6 +25,7 @@ const COUNTRY_CODES = [
   { code: "+55", flag: "🇧🇷", name: "Brazil" },
   { code: "+81", flag: "🇯🇵", name: "Japan" },
   { code: "+82", flag: "🇰🇷", name: "South Korea" },
+  { code: "+233", flag: "🇬🇭", name: "Ghana" }
 ];
 
 export default function ProfilePage() {
@@ -104,6 +105,7 @@ export default function ProfilePage() {
         .field-in  { animation: fieldIn 0.4s ease-out both; }
         .field-in:nth-child(1) { animation-delay: 0.1s; }
         .field-in:nth-child(2) { animation-delay: 0.18s; }
+        .field-in:nth-child(3) { animation-delay: 0.26s; }
       `}</style>
 
       <main className="relative min-h-screen flex items-center justify-center overflow-hidden p-4">
@@ -128,28 +130,25 @@ export default function ProfilePage() {
 
             {/* Header */}
             <div className="flex items-center justify-between">
-              <Image src="/quizinc.jpg" alt="QuizInc" width={72} height={28} className="object-contain opacity-60" style={{ width: "auto", height: 28 }} />
-              <span className="text-[9px] text-white/25 font-mono uppercase tracking-[0.25em]">Step 2 of 2</span>
+              <Image src="/quizinc.jpg" alt="QuizInc logo" width={85} height={32} className="object-contain opacity-85 bg-transparent" />
             </div>
 
             {/* Title */}
             <div>
-              <div className="inline-flex items-center gap-2 mb-2">
-                <span className="text-xl">👤</span>
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-400">Complete Your Profile</span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white leading-snug">
-                One last
-                <span className="ml-2" style={{
-                  background: "linear-gradient(135deg, #3b82f6, #ef4444)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}>step</span>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">
+                SETUP
+                <span
+                  className="ml-2 text-3xl md:text-4xl font-black tracking-tight leading-none" // Matches the exact size, tracking, and leading of SETUP
+                  style={{
+                    background: "linear-gradient(135deg, #3b82f6, #ef4444)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  PROFILE
+                </span>
               </h1>
-              <p className="text-white/35 text-xs mt-1.5 leading-relaxed">
-                Add your WhatsApp number to join the quiz group.
-              </p>
             </div>
 
             {/* Phone field */}
@@ -192,7 +191,7 @@ export default function ProfilePage() {
               {/* Privacy note */}
               <div className="flex items-start gap-2 rounded-xl px-3.5 py-2.5 border border-blue-500/10"
                 style={{ background: "rgba(59,130,246,0.04)" }}>
-                <span className="text-blue-400 text-xs mt-0.5 flex-shrink-0">🔒</span>
+
                 <p className="text-blue-300/50 text-[10px] leading-relaxed">
                   Your number is only used to add you to the WhatsApp group for results and announcements. We will never share or misuse it.
                 </p>
@@ -206,7 +205,7 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. MIT, Google, Freelancer..."
+                placeholder="e.g.  NIT , IIT , BITS , ..."
                 value={college}
                 onChange={(e) => setCollege(e.target.value)}
                 className="rounded-xl px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
@@ -215,6 +214,40 @@ export default function ProfilePage() {
                   border: "1px solid rgba(255,255,255,0.08)",
                 }}
               />
+            </div>
+
+            {/* WhatsApp Group Link Section */}
+            <div className="field-in flex flex-col gap-2">
+              <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-white/40">
+                Official Contest Group
+              </label>
+              <a
+                href="https://chat.whatsapp.com/GzKPpQmJYFV7ag5sAgwUqS?s=sw&p=a&mlu=1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl px-4 py-3 text-sm border transition-all duration-200"
+                style={{
+                  background: "rgba(34, 197, 94, 0.05)",
+                  borderColor: "rgba(34, 197, 94, 0.15)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(34, 197, 94, 0.09)";
+                  e.currentTarget.style.borderColor = "rgba(34, 197, 94, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(34, 197, 94, 0.05)";
+                  e.currentTarget.style.borderColor = "rgba(34, 197, 94, 0.15)";
+                }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+
+                  <div className="flex flex-col">
+                    <span className="font-bold text-green-400 text-xs">Join WhatsApp Community</span>
+                    <span className="text-[10px] text-white/40 truncate">Click to enter official discussion hub</span>
+                  </div>
+                </div>
+                <span className="text-green-400 font-bold ml-2 flex-shrink-0 text-xs">JOIN →</span>
+              </a>
             </div>
 
             {/* Error */}

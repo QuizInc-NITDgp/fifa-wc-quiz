@@ -8,12 +8,12 @@ import { doc, getDoc } from "firebase/firestore";
 import { createUser, getUser } from "@/lib/firestore/user";
 
 const RULES = [
-  { icon: "📋", text: "There are 15 questions in total — all must be answered within the quiz window." },
-  { icon: "🎬", text: "Questions may include text, images, or video. Read and watch carefully before answering." },
-  { icon: "🔒", text: "You cannot go back to a previous question once answered or skipped." },
-  { icon: "⚡", text: "Complete the quiz in one sitting. Closing the tab will not save your progress." },
-  { icon: "⏱️", text: "Your cumulative time is recorded and used for leaderboard ranking." },
-  { icon: "🚫", text: "Switching tabs or minimizing the window is not allowed. If detected, your quiz will be auto-submitted immediately." },
+  { icon: "", text: "1. The test consists of 15 questions, with 90 seconds allotted for each question" },
+  { icon: "", text: "2. Questions may include text, images, or video. Read and watch carefully before answering" },
+  { icon: "", text: "3. You cannot go back to a previous question once answered or skipped" },
+  { icon: "", text: "4. Complete the quiz in one sitting. Closing the tab will not save your progress" },
+  { icon: "", text: "5. In case of a tie, the participant with the lower cumulative time wins" },
+  { icon: "", text: "6. Switching tabs or minimizing the window is not allowed. If detected, your quiz will be auto-submitted immediately" },
 ];
 
 type WindowStatus = "loading" | "not_started" | "open" | "closed";
@@ -75,7 +75,7 @@ export default function InstructionsPage() {
           const h = Math.floor(diff / 3600000);
           const m = Math.floor((diff % 3600000) / 60000);
           const s = Math.floor((diff % 60000) / 1000);
-          setTimeLeft(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
+          setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
           return;
         }
 
@@ -85,7 +85,7 @@ export default function InstructionsPage() {
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`);
+        setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
       }, 1000);
     };
 
@@ -104,10 +104,10 @@ export default function InstructionsPage() {
 
   // Colors and labels per window status
   const statusConfig = {
-    loading:     { color: "#3b82f6", label: "Checking...",       bg: "rgba(59,130,246,0.1)",  border: "rgba(59,130,246,0.2)"  },
+    loading: { color: "#3b82f6", label: "Checking...", bg: "rgba(59,130,246,0.1)", border: "rgba(59,130,246,0.2)" },
     not_started: { color: "#f59e0b", label: "Quiz goes live in", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.25)" },
-    open:        { color: "#22c55e", label: "Closes in",         bg: "rgba(34,197,94,0.08)",  border: "rgba(34,197,94,0.25)"  },
-    closed:      { color: "#ef4444", label: "Quiz Closed",       bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.25)"  },
+    open: { color: "#22c55e", label: "Closes in", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.25)" },
+    closed: { color: "#ef4444", label: "Quiz Closed", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.25)" },
   }[windowStatus];
 
   const canStart = windowStatus === "open";
@@ -138,7 +138,7 @@ export default function InstructionsPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .panel-in  { animation: panelIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
         .rule-item { animation: ruleIn 0.4s ease-out both; }
-        ${RULES.map((_,i) => `.rule-item:nth-child(${i+1}) { animation-delay: ${0.1 + i*0.07}s; }`).join("\n")}
+        ${RULES.map((_, i) => `.rule-item:nth-child(${i + 1}) { animation-delay: ${0.1 + i * 0.07}s; }`).join("\n")}
         .timer-tick { animation: timerTick 1s ease-in-out infinite; }
         .pulse-dot  { animation: pulse 1.5s ease-in-out infinite; }
       `}</style>
@@ -159,7 +159,7 @@ export default function InstructionsPage() {
 
             {/* Header row */}
             <div className="flex items-center justify-between">
-              <Image src="/logo.jpg" alt="QuizInc" width={80} height={34} className="object-contain opacity-85" />
+              <Image src="/logo.jpg" alt="QuizInc" width={85} height={32} className="object-contain opacity-85" />
 
               {/* Status + Countdown badge */}
               <div className="flex items-center gap-3 rounded-xl px-4 py-2.5 border transition-all"
@@ -194,11 +194,10 @@ export default function InstructionsPage() {
             {windowStatus === "not_started" && (
               <div className="rounded-xl px-5 py-4 border flex items-start gap-3"
                 style={{ background: "rgba(245,158,11,0.06)", borderColor: "rgba(245,158,11,0.2)" }}>
-                <span className="text-xl flex-shrink-0">⏳</span>
                 <div>
                   <p className="text-amber-400 font-bold text-sm">Quiz hasn't started yet</p>
                   <p className="text-amber-400/50 text-xs mt-0.5 leading-relaxed">
-                    The quiz window opens soon. Stay on this page — the button will activate automatically when it begins.
+                    The quiz window opens soon. Stay on this page-the button will activate automatically when it begins.
                   </p>
                 </div>
               </div>
@@ -206,30 +205,26 @@ export default function InstructionsPage() {
 
             {/* Title */}
             <div>
-              <div className="inline-flex items-center gap-2 mb-3">
-                <span className="text-2xl">⚽</span>
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-blue-400">FIFA World Cup Quiz</span>
-              </div>
               <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-none">
-                How to
-                <span className="ml-2" style={{
-                  background: "linear-gradient(135deg, #3b82f6, #ef4444)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}>Play</span>
+                RULES AND
+                <span
+                  className="ml-2 text-3xl md:text-4xl font-black tracking-tight leading-none" // Matches the exact size, tracking, and leading of RULES AND
+                  style={{
+                    background: "linear-gradient(135deg, #3b82f6, #ef4444)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  REGULATIONS
+                </span>
               </h1>
-              <p className="text-red-400/80 text-xs mt-2 font-medium tracking-wide">
-                ⚠ Read all instructions before you kick off
-              </p>
             </div>
-
             {/* Rules */}
             <div className="flex flex-col gap-2.5">
               {RULES.map((rule, i) => (
                 <div key={i} className="rule-item flex items-start gap-3.5 rounded-xl px-4 py-3.5 border border-white/[0.05] group hover:border-blue-500/20 hover:bg-blue-500/[0.03] transition-all duration-200"
                   style={{ background: "rgba(255,255,255,0.02)" }}>
-                  <span className="text-base flex-shrink-0 mt-0.5">{rule.icon}</span>
                   <p className="text-white/55 text-sm leading-relaxed group-hover:text-white/70 transition-colors">{rule.text}</p>
                 </div>
               ))}
@@ -237,13 +232,6 @@ export default function InstructionsPage() {
 
             {/* Buttons */}
             <div className="flex gap-3 mt-1">
-              <button
-                onClick={() => router.push("/")}
-                className="flex-1 py-3.5 rounded-xl font-bold text-sm tracking-wider border border-white/10 text-white/40 hover:text-white/60 hover:border-white/20 hover:bg-white/[0.03] transition-all cursor-pointer"
-                style={{ background: "rgba(255,255,255,0.02)" }}
-              >
-                ← Go Back
-              </button>
               <button
                 onClick={() => canStart && router.push("/quiz")}
                 disabled={!canStart}
@@ -259,9 +247,9 @@ export default function InstructionsPage() {
                 }}
               >
                 {windowStatus === "not_started" && "⏳ Quiz Not Started"}
-                {windowStatus === "open"        && "⚽ Kick Off →"}
-                {windowStatus === "closed"      && "Quiz Closed"}
-                {windowStatus === "loading"     && "Loading..."}
+                {windowStatus === "open" && "⚽ Kick Off →"}
+                {windowStatus === "closed" && "Quiz Closed"}
+                {windowStatus === "loading" && "Loading..."}
               </button>
             </div>
 
