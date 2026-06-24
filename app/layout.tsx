@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FIFA WC QUIZ",
   description: "Organized by QuizInc",
+  icons: {
+    icon: "/quizinc.jpg",
+  },
 };
 
 export default function RootLayout({

@@ -14,6 +14,7 @@ export interface QuizUser {
   displayName: string;
   email: string;
   phone: string;           // With country code e.g. +91XXXXXXXXXX
+  college: string;         // College or Organisation name
   answers: (string | null)[];
   cumulativeTimeMs: number;
   totalScore: number;
@@ -39,6 +40,7 @@ export async function createUser(
       displayName,
       email,
       phone: "",
+      college: "",
       answers: Array(15).fill(null),
       cumulativeTimeMs: 0,
       totalScore: 0,
@@ -55,9 +57,10 @@ export async function createUser(
 
 export async function saveProfile(
   uid: string,
-  phone: string
+  phone: string,
+  college: string
 ): Promise<void> {
-  await setDoc(doc(db, "users", uid), { phone }, { merge: true });
+  await setDoc(doc(db, "users", uid), { phone, college }, { merge: true });
 }
 
 // ─── Fetch user ───────────────────────────────────────────────────────────────

@@ -32,27 +32,21 @@ export default function ProfilePage() {
   const [uid, setUid] = useState<string | null>(null);
   const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
+  const [college, setCollege] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [checkingAccess, setCheckingAccess] = useState(true); // ← starts true, blocks UI until auth resolves
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      // Not logged in → back to login
       if (!user) { router.replace("/"); return; }
 
-      // Make sure the Firestore doc exists with the full schema before
-      // we check or write any fields — prevents partial/broken docs.
       await createUser(user.uid, user.displayName || "Anonymous", user.email || "");
       const userData = await getUser(user.uid);
 
-      // Already attended → go to final
       if (userData?.isAttended) { router.replace("/final"); return; }
-
-      // Profile already complete → skip this page
       if (userData?.phone) { router.replace("/instructions"); return; }
 
-      // All good — show the form
       setUid(user.uid);
       setCheckingAccess(false);
     });
@@ -62,11 +56,17 @@ export default function ProfilePage() {
   const handleSubmit = async () => {
     setError("");
     const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length < 7) { setError("Please enter a valid phone number."); return; }
+    const minDigits = countryCode === "+91" ? 10 : 7;
+    const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode);
+    if (phoneDigits.length < minDigits) {
+      setError(`Please enter a valid ${selectedCountry?.name || ""} phone number.`);
+      return;
+    }
+    if (college.trim().length < 2) { setError("Please enter your college or organisation."); return; }
 
     setSaving(true);
     try {
-      await saveProfile(uid!, `${countryCode}${phoneDigits}`);
+      await saveProfile(uid!, `${countryCode}${phoneDigits}`, college.trim());
       router.push("/instructions");
     } catch (e) {
       console.error(e);
@@ -113,13 +113,18 @@ export default function ProfilePage() {
         <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-red-700/15 blur-[100px] -z-10" />
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-blue-700/15 blur-[100px] -z-10" />
 
-        <div className="panel-in relative w-full max-w-md rounded-2xl overflow-hidden border border-white/[0.07] shadow-2xl"
-          style={{ background: "rgba(6, 9, 26, 0.92)", backdropFilter: "blur(28px)", boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.8)" }}>
-
+        <div
+          className="panel-in relative w-full max-w-md rounded-2xl overflow-hidden border border-white/[0.07] shadow-2xl"
+          style={{
+            background: "rgba(6, 9, 26, 0.92)",
+            backdropFilter: "blur(28px)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.8)",
+          }}
+        >
           <div className="h-[2px]"
             style={{ background: "linear-gradient(90deg,#3b82f6,#ef4444,#3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
 
-          <div className="px-7 md:px-9 pt-8 pb-9 flex flex-col gap-7">
+          <div className="px-7 md:px-9 pt-8 pb-9 flex flex-col gap-7 min-w-0 overflow-hidden">
 
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -147,20 +152,21 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            {/* Phone field only */}
+            {/* Phone field */}
             <div className="field-in flex flex-col gap-2">
               <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-white/40">
-                WhatsApp Number
+                WhatsApp Number <span className="text-red-400">*</span>
               </label>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 min-w-0">
                 <select
                   value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  className="rounded-xl px-3 py-3 text-sm font-mono text-white/80 outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none cursor-pointer"
+                  onChange={(e) => { setCountryCode(e.target.value); setPhone(""); }}
+                  className="rounded-xl px-3 py-3 text-sm font-mono text-white/80 outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none cursor-pointer flex-shrink-0"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.08)",
-                    minWidth: "90px",
+                    width: "95px",
                   }}
                 >
                   {COUNTRY_CODES.map((c) => (
@@ -169,12 +175,13 @@ export default function ProfilePage() {
                     </option>
                   ))}
                 </select>
+
                 <input
                   type="tel"
-                  placeholder="9876543210"
+                  placeholder={countryCode === "+91" ? "10-digit number" : "Phone number"}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="flex-1 rounded-xl px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
+                  className="flex-1 min-w-0 rounded-xl px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.08)",
@@ -190,6 +197,24 @@ export default function ProfilePage() {
                   Your number is only used to add you to the WhatsApp group for results and announcements. We will never share or misuse it.
                 </p>
               </div>
+            </div>
+
+            {/* College / Organisation field */}
+            <div className="field-in flex flex-col gap-2">
+              <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-white/40">
+                College / Organisation <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. MIT, Google, Freelancer..."
+                value={college}
+                onChange={(e) => setCollege(e.target.value)}
+                className="rounded-xl px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              />
             </div>
 
             {/* Error */}

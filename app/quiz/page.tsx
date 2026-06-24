@@ -20,7 +20,7 @@ import { createUser, getUser, saveAnswer, submitQuiz } from "@/lib/firestore/use
 import ProgressBar from "@/app/components/ProgressBar";
 import Timer from "@/app/components/Timer";
 
-const FALLBACK_PER_Q_SECONDS = 45;
+const FALLBACK_PER_Q_SECONDS = 90;
 type QuizState = "loading" | "closed" | "active" | "done" | "no-questions";
 
 // ── Tab-switch anti-cheat helpers ───────────────────────────────────────────

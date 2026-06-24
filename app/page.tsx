@@ -119,8 +119,15 @@ export default function LoginPage() {
           <div className="absolute top-0 left-0 right-0 h-[2px] z-10"
             style={{ background: "linear-gradient(90deg,#3b82f6,#ef4444,#3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
 
-          <div className="relative flex-1 min-h-[300px] md:min-h-[460px] w-full">
-            <Image src="/photo.jpeg" alt="football legends" fill className="object-cover opacity-90" priority />
+          <div className="relative w-full md:flex-1 md:min-h-[460px]">
+            <Image
+              src="/finalposter.jpeg"
+              alt="football legends"
+              width={800}
+              height={1200}
+              className="w-full h-auto md:absolute md:inset-0 md:h-full md:object-cover opacity-90"
+              priority
+            />
             <div className="absolute inset-0 border-r border-white/[0.05]" />
           </div>
 
