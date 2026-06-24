@@ -205,7 +205,7 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                placeholder="e.g.  NIT , IIT , BITS , ..."
+                placeholder="e.g. NIT DURGAPUR, JU, MCK,..."
                 value={college}
                 onChange={(e) => setCollege(e.target.value)}
                 className="rounded-xl px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
