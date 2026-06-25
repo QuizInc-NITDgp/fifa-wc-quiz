@@ -273,9 +273,10 @@ export default function FinalPage() {
                 </a>
               ))}
             </div>
-
+            
             {/* Sign out */}
-            <button
+            <div className="flex justify-center">
+              <button
               onClick={handleSignOut}
               className="w-full text-center rounded-xl border text-white/55 hover:text-white/85 text-[11px] font-semibold uppercase tracking-[0.15em] py-3 transition-all cursor-pointer"
               style={{
@@ -293,6 +294,7 @@ export default function FinalPage() {
             >
               Sign out
             </button>
+            </div>
 
           </div>
         </div>
