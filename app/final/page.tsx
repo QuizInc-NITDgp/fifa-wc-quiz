@@ -241,7 +241,7 @@ export default function FinalPage() {
                 >
                   Instagram Story
                 </a>
-                . Stay Qurious!
+                . Stay Qrious!
               </p>
             </div>
 
