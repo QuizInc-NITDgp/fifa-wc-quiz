@@ -152,43 +152,37 @@ export default function QuizPage() {
 
   
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.replace("/"); return; }
-      const userData = await getUser(user.uid);
-      if (userData?.isAttended) { router.replace("/final"); return; }
-      if (!userData?.phone) { router.replace("/profile"); return; }
-
-      setUid(user.uid);
-
-      try {
-        const snap = await getDoc(doc(db, "config", "quizWindow"));
-        if (snap.exists()) {
-          const data = snap.data();
-          const now = Date.now();
-          const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
-          const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
-
-          if (startTime && now < startTime) { router.replace("/instructions"); return; }
-          if (endTime && now > endTime) { router.replace("/instructions"); return; }
-
-          setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
-        }
-
-        const qs = await fetchQuestions();
-        if (qs.length === 0) { setQuizState("no-questions"); return; }
-
-        setQuestions(qs);
-        setAnswers(Array(qs.length).fill(null));
-        questionStartMs.current = Date.now();
-        setQuizState("active");
-
-      } catch (err) {
-        console.error("Failed to load quiz:", err);
-        setQuizState("closed");
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    if (!user) { router.replace("/"); return; }
+    const userData = await getUser(user.uid);
+    if (userData?.isAttended) { router.replace("/final"); return; }
+    if (!userData?.phone) { router.replace("/profile"); return; }
+    setUid(user.uid);
+    try {
+      const snap = await getDoc(doc(db, "config", "quizWindow"));
+      if (snap.exists()) {
+        const data = snap.data();
+        const now = Date.now();
+        // TEST BRANCH: bypassing firestore startTime/endTime check
+        const startTime = null;
+        const endTime = null;
+        if (startTime && now < startTime) { router.replace("/instructions"); return; }
+        if (endTime && now > endTime) { router.replace("/instructions"); return; }
+        setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
       }
-    });
-    return () => unsub();
-  }, [router]);
+      const qs = await fetchQuestions();
+      if (qs.length === 0) { setQuizState("no-questions"); return; }
+      setQuestions(qs);
+      setAnswers(Array(qs.length).fill(null));
+      questionStartMs.current = Date.now();
+      setQuizState("active");
+    } catch (err) {
+      console.error("Failed to load quiz:", err);
+      setQuizState("closed");
+    }
+  });
+  return () => unsub();
+}, [router]);
 
   const advanceOrFinish = useCallback(async (chosenAnswer: string | null) => {
     if (!uid || questions.length === 0) return;
