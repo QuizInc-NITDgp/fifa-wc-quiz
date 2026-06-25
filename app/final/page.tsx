@@ -241,7 +241,7 @@ export default function FinalPage() {
                 >
                   Instagram Story
                 </a>
-                . Stay Qurious!
+                . Stay Qrious!
               </p>
             </div>
 
@@ -277,7 +277,19 @@ export default function FinalPage() {
             {/* Sign out */}
             <button
               onClick={handleSignOut}
-              className="w-full text-center text-white/25 hover:text-white/50 text-[11px] font-semibold uppercase tracking-[0.15em] py-1 transition-colors cursor-pointer"
+              className="w-full text-center rounded-xl border text-white/55 hover:text-white/85 text-[11px] font-semibold uppercase tracking-[0.15em] py-3 transition-all cursor-pointer"
+              style={{
+                background: "rgba(239,68,68,0.06)",
+                borderColor: "rgba(239,68,68,0.18)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.12)";
+                e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(239,68,68,0.06)";
+                e.currentTarget.style.borderColor = "rgba(239,68,68,0.18)";
+              }}
             >
               Sign out
             </button>
