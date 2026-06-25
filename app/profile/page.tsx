@@ -25,18 +25,23 @@ const COUNTRY_CODES = [
   { code: "+55", flag: "🇧🇷", name: "Brazil" },
   { code: "+81", flag: "🇯🇵", name: "Japan" },
   { code: "+82", flag: "🇰🇷", name: "South Korea" },
-  { code: "+233", flag: "🇬🇭", name: "Ghana" }
+  { code: "+233", flag: "🇬🇭", name: "Ghana" },
 ];
+
+const CUSTOM_CODE_VALUE = "CUSTOM";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [uid, setUid] = useState<string | null>(null);
   const [countryCode, setCountryCode] = useState("+91");
+  const [customCode, setCustomCode] = useState("");
   const [phone, setPhone] = useState("");
   const [college, setCollege] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [checkingAccess, setCheckingAccess] = useState(true);
+
+  const isCustom = countryCode === CUSTOM_CODE_VALUE;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -56,18 +61,34 @@ export default function ProfilePage() {
 
   const handleSubmit = async () => {
     setError("");
+
+    // Resolve the dialing code: either a preset one, or the user's custom entry.
+    let resolvedCode = countryCode;
+    if (isCustom) {
+      const digitsOnly = customCode.replace(/\D/g, "");
+      if (digitsOnly.length < 1 || digitsOnly.length > 4) {
+        setError("Please enter a valid country code (e.g. +351).");
+        return;
+      }
+      resolvedCode = `+${digitsOnly}`;
+    }
+
     const phoneDigits = phone.replace(/\D/g, "");
-    const minDigits = countryCode === "+91" ? 10 : 7;
+    const minDigits = resolvedCode === "+91" ? 10 : 1;
     const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode);
     if (phoneDigits.length < minDigits) {
-      setError(`Please enter a valid ${selectedCountry?.name || ""} phone number.`);
+      setError(
+        resolvedCode === "+91"
+          ? "Please enter a valid 10-digit phone number."
+          : `Please enter a valid ${isCustom ? "" : (selectedCountry?.name || "")} phone number.`
+      );
       return;
     }
     if (college.trim().length < 2) { setError("Please enter your college or organisation."); return; }
 
     setSaving(true);
     try {
-      await saveProfile(uid!, `${countryCode}${phoneDigits}`, college.trim());
+      await saveProfile(uid!, `${resolvedCode}${phoneDigits}`, college.trim());
       router.push("/instructions");
     } catch (e) {
       console.error(e);
@@ -158,22 +179,77 @@ export default function ProfilePage() {
               </label>
 
               <div className="flex gap-2 min-w-0">
-                <select
-                  value={countryCode}
-                  onChange={(e) => { setCountryCode(e.target.value); setPhone(""); }}
-                  className="rounded-xl px-3 py-3 text-sm font-mono text-white/80 outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none cursor-pointer flex-shrink-0"
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    width: "95px",
-                  }}
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code} style={{ background: "#06091a" }}>
-                      {c.flag} {c.code}
-                    </option>
-                  ))}
-                </select>
+                {/* Country code select — swaps in-place for a custom code input when "Other" is picked */}
+                <div className="relative flex-shrink-0" style={{ width: "95px" }}>
+                  {!isCustom ? (
+                    <>
+                      <select
+                        value={countryCode}
+                        onChange={(e) => {
+                          setCountryCode(e.target.value);
+                          setPhone("");
+                          setCustomCode("");
+                        }}
+                        className="w-full rounded-xl pl-3 pr-7 py-3 text-sm font-mono text-white/80 outline-none focus:ring-1 focus:ring-blue-500/50 appearance-none cursor-pointer"
+                        style={{
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={c.code} value={c.code} style={{ background: "#06091a" }}>
+                            {c.flag} {c.code}
+                          </option>
+                        ))}
+                        <option value={CUSTOM_CODE_VALUE} style={{ background: "#06091a" }}>
+                          🌐 Other
+                        </option>
+                      </select>
+
+                      {/* Dropdown chevron icon (decorative, select handles all interaction) */}
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 10 6"
+                        fill="none"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                      >
+                        <path d="M1 1L5 5L9 1" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm font-mono pointer-events-none">
+                        +
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoFocus
+                        value={customCode}
+                        onChange={(e) => setCustomCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        placeholder="code"
+                        className="w-full rounded-xl pl-6 pr-7 py-3 text-sm font-mono text-white/90 placeholder-white/20 outline-none focus:ring-1 focus:ring-blue-500/50"
+                        style={{
+                          background: "rgba(255,255,255,0.05)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      />
+
+                      {/* Back to dropdown */}
+                      <button
+                        type="button"
+                        onClick={() => { setCountryCode("+91"); setCustomCode(""); }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors cursor-pointer"
+                        aria-label="Back to country list"
+                      >
+                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                          <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
 
                 <input
                   type="tel"
