@@ -42,56 +42,56 @@ export default function InstructionsPage() {
 
   // Timer logic
   useEffect(() => {
-    if (checkingAccess) return;
+  if (checkingAccess) return;
+  let interval: ReturnType<typeof setInterval>;
 
-    let interval: ReturnType<typeof setInterval>;
+  const fetchAndStartTimer = async () => {
+    // ===== OLD CODE (commented out for test branch) =====
+    // const snap = await getDoc(doc(db, "config", "quizWindow"));
+    // if (!snap.exists()) return;
+    // const data = snap.data();
+    // // Support both startTime and endTime in the config doc
+    // const startTime: Date | null = data.startTime ? data.startTime.toDate() : null;
+    // const endTime: Date = data.endTime.toDate();
 
-    const fetchAndStartTimer = async () => {
-      const snap = await getDoc(doc(db, "config", "quizWindow"));
-      if (!snap.exists()) return;
+    // ===== HARDCODED FOR TEST BRANCH =====
+    const startTime: Date | null = new Date(2026, 5, 24, 12, 0, 0); // 24 Jun 2026, 12:00 PM
+    const endTime: Date = new Date(2026, 6, 24, 12, 0, 0); // 24 Jul 2026, 12:00 PM
 
-      const data = snap.data();
-      // Support both startTime and endTime in the config doc
-      const startTime: Date | null = data.startTime ? data.startTime.toDate() : null;
-      const endTime: Date = data.endTime.toDate();
-
-      interval = setInterval(() => {
-        const now = Date.now();
-        const end = endTime.getTime();
-        const start = startTime ? startTime.getTime() : null;
-
-        if (now > end) {
-          // Quiz window has closed
-          setWindowStatus("closed");
-          setTimeLeft("00:00:00");
-          clearInterval(interval);
-          return;
-        }
-
-        if (start && now < start) {
-          // Quiz hasn't started yet — count down to start
-          setWindowStatus("not_started");
-          const diff = start - now;
-          const h = Math.floor(diff / 3600000);
-          const m = Math.floor((diff % 3600000) / 60000);
-          const s = Math.floor((diff % 60000) / 1000);
-          setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
-          return;
-        }
-
-        // Quiz is live — count down to end
-        setWindowStatus("open");
-        const diff = end - now;
+    interval = setInterval(() => {
+      const now = Date.now();
+      const end = endTime.getTime();
+      const start = startTime ? startTime.getTime() : null;
+      if (now > end) {
+        // Quiz window has closed
+        setWindowStatus("closed");
+        setTimeLeft("00:00:00");
+        clearInterval(interval);
+        return;
+      }
+      if (start && now < start) {
+        // Quiz hasn't started yet — count down to start
+        setWindowStatus("not_started");
+        const diff = start - now;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
-      }, 1000);
-    };
+        return;
+      }
+      // Quiz is live — count down to end
+      setWindowStatus("open");
+      const diff = end - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
+    }, 1000);
+  };
 
-    fetchAndStartTimer();
-    return () => clearInterval(interval);
-  }, [checkingAccess]);
+  fetchAndStartTimer();
+  return () => clearInterval(interval);
+}, [checkingAccess]);
 
   if (checkingAccess) {
     return (

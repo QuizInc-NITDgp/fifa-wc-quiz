@@ -163,9 +163,15 @@ export default function QuizPage() {
       if (snap.exists()) {
         const data = snap.data();
         const now = Date.now();
-        // TEST BRANCH: bypassing firestore startTime/endTime check
-        const startTime = null;
-        const endTime = null;
+
+        // ===== OLD CODE (commented out for test branch) =====
+        // const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
+        // const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
+
+        // ===== HARDCODED FOR TEST BRANCH =====
+        const startTime = new Date(2026, 5, 24, 12, 0, 0).getTime(); // 24 Jun 2026, 12:00 PM
+        const endTime = new Date(2026, 6, 24, 12, 0, 0).getTime();   // 24 Jul 2026, 12:00 PM
+
         if (startTime && now < startTime) { router.replace("/instructions"); return; }
         if (endTime && now > endTime) { router.replace("/instructions"); return; }
         setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
