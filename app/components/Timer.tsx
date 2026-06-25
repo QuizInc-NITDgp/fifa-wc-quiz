@@ -26,10 +26,6 @@ export default function Timer({
   useEffect(() => {
     if (!isRunning) return;
     if (secondsLeft <= 0) {
-      // Defer to next tick — calling onTimeUp synchronously here updates
-      // the parent (QuizPage) while Timer itself is still rendering,
-      // which React flags as "Cannot update a component while rendering
-      // a different component."
       const t = setTimeout(() => onTimeUpRef.current(), 0);
       return () => clearTimeout(t);
     }
@@ -53,7 +49,8 @@ export default function Timer({
   const isWarning = secondsLeft <= 20 && !isUrgent;
   const pct = secondsLeft / durationSeconds;
 
-  const radius = 20;
+  // --- ADJUSTED FOR MORE SPACING ---
+  const radius = 26; // Increased radius for a larger ring
   const circ = 2 * Math.PI * radius;
   const dash = circ * pct;
 
@@ -65,21 +62,36 @@ export default function Timer({
   const ss = String(secondsLeft % 60).padStart(2, "0");
 
   return (
-    <div className={`timer-ring-wrap ${isUrgent ? "is-urgent" : ""}`}>
-      <svg className="timer-svg" width="56" height="56" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="28" cy="28" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-        <circle
-          cx="28" cy="28" r={radius}
-          fill="none"
-          stroke={ringColor}
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`}
-          style={{ filter: `drop-shadow(0 0 6px ${glowColor})` }}
-        />
-      </svg>
-      <div className="timer-text" style={{ color: textColor }}>
-        {mm}:{ss}
+    // Increased outer padding (p-4) to give spacing around the entire component
+    <div className={`flex items-center justify-center p-4 ${isUrgent ? "is-urgent" : ""}`}>
+      {/* Bumped frame size up to 72x72 for a cleaner, spacious look */}
+      <div className="relative" style={{ width: 72, height: 72 }}>
+        <svg
+          className="absolute inset-0"
+          width="72"
+          height="72"
+          style={{ transform: "rotate(-90deg)" }}
+        >
+          {/* Centered at cx=36, cy=36 */}
+          <circle cx="36" cy="36" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+          <circle
+            cx="36" cy="36" r={radius}
+            fill="none"
+            stroke={ringColor}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circ}`}
+            style={{ filter: `drop-shadow(0 0 6px ${glowColor})` }}
+          />
+        </svg>
+
+        {/* Changed inset-3 to inset-0 so the text centers perfectly in the expanded ring */}
+        <div
+          className="absolute inset-0 flex items-center justify-center text-sm font-mono font-bold tabular-nums leading-none"
+          style={{ color: textColor }}
+        >
+          {mm}:{ss}
+        </div>
       </div>
     </div>
   );

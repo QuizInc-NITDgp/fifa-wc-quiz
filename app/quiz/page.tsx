@@ -150,47 +150,45 @@ export default function QuizPage() {
   const endingDueToViolation = useRef(false);
 
 
-  // Add this inside your quiz page's auth useEffect, replacing the existing one.
-// This guards against direct URL access before quiz starts or after it ends.
+  
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { router.replace("/"); return; }
+      const userData = await getUser(user.uid);
+      if (userData?.isAttended) { router.replace("/final"); return; }
+      if (!userData?.phone) { router.replace("/profile"); return; }
 
-useEffect(() => {
-  const unsub = onAuthStateChanged(auth, async (user) => {
-    if (!user) { router.replace("/"); return; }
-    const userData = await getUser(user.uid);
-    if (userData?.isAttended) { router.replace("/final"); return; }
-    if (!userData?.phone) { router.replace("/profile"); return; }
+      setUid(user.uid);
 
-    setUid(user.uid);
+      try {
+        const snap = await getDoc(doc(db, "config", "quizWindow"));
+        if (snap.exists()) {
+          const data = snap.data();
+          const now = Date.now();
+          const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
+          const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
 
-    try {
-      const snap = await getDoc(doc(db, "config", "quizWindow"));
-      if (snap.exists()) {
-        const data = snap.data();
-        const now = Date.now();
-        const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
-        const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
+          if (startTime && now < startTime) { router.replace("/instructions"); return; }
+          if (endTime && now > endTime) { router.replace("/instructions"); return; }
 
-        if (startTime && now < startTime) { router.replace("/instructions"); return; }
-        if (endTime && now > endTime) { router.replace("/instructions"); return; }
+          setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
+        }
 
-        setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
+        const qs = await fetchQuestions();
+        if (qs.length === 0) { setQuizState("no-questions"); return; }
+
+        setQuestions(qs);
+        setAnswers(Array(qs.length).fill(null));
+        questionStartMs.current = Date.now();
+        setQuizState("active");
+
+      } catch (err) {
+        console.error("Failed to load quiz:", err);
+        setQuizState("closed");
       }
-
-      const qs = await fetchQuestions();
-      if (qs.length === 0) { setQuizState("no-questions"); return; }
-
-      setQuestions(qs);
-      setAnswers(Array(qs.length).fill(null));
-      questionStartMs.current = Date.now();
-      setQuizState("active");
-
-    } catch (err) {
-      console.error("Failed to load quiz:", err);
-      setQuizState("closed");
-    }
-  });
-  return () => unsub();
-}, [router]);
+    });
+    return () => unsub();
+  }, [router]);
 
   const advanceOrFinish = useCallback(async (chosenAnswer: string | null) => {
     if (!uid || questions.length === 0) return;
@@ -266,6 +264,8 @@ useEffect(() => {
   // Tab-switch detection: only watches while the quiz is actually in
   // progress. 1st time tab/window is left → show warning. 2nd time →
   // auto-submit and end the quiz.
+
+  
   useEffect(() => {
     if (quizState !== "active" || !uid) return;
 
@@ -371,23 +371,41 @@ useEffect(() => {
 
           <div className="h-[2px] w-full" style={{ background: "linear-gradient(90deg, #3b82f6, #ef4444, #3b82f6)", backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite" }} />
 
-          <div className="grid grid-cols-3 items-center px-6 pt-5 pb-3 md:px-8">
-            <div className="flex justify-start">
-              <Image src="/quizinc.jpg" alt="QuizInc" width={90} height={32} className="object-contain opacity-90" />
+          <div className="relative flex items-center justify-between px-4 pt-5 pb-3 md:px-8">
+
+            {/* Logo Container - Boxed to 96px */}
+            <div className="w-24 flex items-center justify-start flex-shrink-0">
+              <Image
+                src="/quizinc.jpg"
+                alt="QuizInc"
+                width={85}
+                height={32}
+                className="object-contain opacity-90"
+              />
             </div>
 
-            <div className="flex justify-center">
-              <div className="relative px-4 py-1.5 rounded-full border border-white/10"
-                style={{ background: "rgba(255,255,255,0.04)" }}>
-                <span className="text-[10px] md:text-xs font-black font-mono tracking-widest text-white/60 uppercase">
-                  Q.<span className="text-[#F5C518]">{currentIdx + 1}</span> / {questions.length}
-                </span>
-              </div>
+            {/* Centered badge */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 rounded-full border border-white/10"
+              style={{ background: "rgba(255,255,255,0.04)" }}>
+              <span
+                className="text-[10px] md:text-xs font-black font-mono tracking-widest uppercase"
+                style={{
+                  background: "linear-gradient(135deg, #3b82f6, #ef4444)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  display: "inline-block",
+                }}
+              >
+                QUESTION-{currentIdx + 1}
+              </span>
             </div>
 
-            <div className="flex justify-end">
+            {/* Timer Container - Boxed to the exact same 96px width */}
+            <div className="w-24 flex items-center justify-end flex-shrink-0">
               <Timer key={timerKey} durationSeconds={perQSeconds} onTimeUp={handleTimeUp} isRunning={!isLocked} />
             </div>
+
           </div>
 
           <div className="px-6 pb-4 md:px-8">
@@ -488,7 +506,16 @@ useEffect(() => {
                   boxShadow: canSubmit ? "0 4px 16px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.1)" : "none",
                 }}
               >
-                {isLastQuestion ? "⚽ Submit Quiz" : "Lock In Answer →"}
+                {isLastQuestion ? (
+                  "Submit Quiz"
+                ) : (
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    <span>NEXT QUESTION</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0">
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                )}
               </button>
             </div>
           </div>
