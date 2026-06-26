@@ -150,7 +150,7 @@ export default function QuizPage() {
   const endingDueToViolation = useRef(false);
 
 
-  
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.replace("/"); return; }
@@ -265,7 +265,7 @@ export default function QuizPage() {
   // progress. 1st time tab/window is left → show warning. 2nd time →
   // auto-submit and end the quiz.
 
-  
+
   useEffect(() => {
     if (quizState !== "active" || !uid) return;
 
@@ -409,7 +409,7 @@ export default function QuizPage() {
           </div>
 
           <div className="px-6 pb-4 md:px-8">
-            <ProgressBar current={currentIdx + 1} total={questions.length} answered={answeredCount} />
+            <ProgressBar current={currentIdx + 1} total={questions.length} answers={answers} />
           </div>
 
           <div className="w-full h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)" }} />
