@@ -105,7 +105,7 @@ export default function FinalPage() {
     );
   }
 
-  const totalQuestions = user?.answers?.length ?? 15;
+  const totalQuestions = user?.answers?.length ?? 20;
   const answeredCount = user?.answers ? user.answers.filter((a) => a !== null).length : 0;
   const skipped = totalQuestions - answeredCount;
 
@@ -273,10 +273,9 @@ export default function FinalPage() {
                 </a>
               ))}
             </div>
-            
+
             {/* Sign out */}
-            <div className="flex justify-center">
-              <button
+             <button
               onClick={handleSignOut}
               className="w-full text-center rounded-xl border text-white/55 hover:text-white/85 text-[11px] font-semibold uppercase tracking-[0.15em] py-3 transition-all cursor-pointer"
               style={{
@@ -294,7 +293,6 @@ export default function FinalPage() {
             >
               Sign out
             </button>
-            </div>
 
           </div>
         </div>

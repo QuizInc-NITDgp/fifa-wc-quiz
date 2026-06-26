@@ -8,7 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { createUser, getUser } from "@/lib/firestore/user";
 
 const RULES = [
-  { icon: "", text: "1. The test consists of 15 questions, with 90 seconds allotted for each question" },
+  { icon: "", text: "1. The test consists of 20 questions, with 90 seconds allotted for each question" },
   { icon: "", text: "2. Questions may include text, images, or video. Read and watch carefully before answering" },
   { icon: "", text: "3. You cannot go back to a previous question once answered or skipped" },
   { icon: "", text: "4. Complete the quiz in one sitting. Closing the tab will not save your progress" },
