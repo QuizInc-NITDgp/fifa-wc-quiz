@@ -150,45 +150,45 @@ export default function QuizPage() {
   const endingDueToViolation = useRef(false);
 
 
-  
+
   useEffect(() => {
-  const unsub = onAuthStateChanged(auth, async (user) => {
-    if (!user) { router.replace("/"); return; }
-    const userData = await getUser(user.uid);
-    if (userData?.isAttended) { router.replace("/final"); return; }
-    if (!userData?.phone) { router.replace("/profile"); return; }
-    setUid(user.uid);
-    try {
-      const snap = await getDoc(doc(db, "config", "quizWindow"));
-      if (snap.exists()) {
-        const data = snap.data();
-        const now = Date.now();
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { router.replace("/"); return; }
+      const userData = await getUser(user.uid);
+      if (userData?.isAttended) { router.replace("/final"); return; }
+      if (!userData?.phone) { router.replace("/profile"); return; }
+      setUid(user.uid);
+      try {
+        const snap = await getDoc(doc(db, "config", "quizWindow"));
+        if (snap.exists()) {
+          const data = snap.data();
+          const now = Date.now();
 
-        // ===== OLD CODE (commented out for test branch) =====
-        // const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
-        // const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
+          // ===== OLD CODE (commented out for test branch) =====
+          // const startTime = data.startTime ? data.startTime.toDate().getTime() : null;
+          // const endTime = data.endTime ? data.endTime.toDate().getTime() : null;
 
-        // ===== HARDCODED FOR TEST BRANCH =====
-        const startTime = new Date(2026, 5, 24, 12, 0, 0).getTime(); // 24 Jun 2026, 12:00 PM
-        const endTime = new Date(2026, 6, 24, 12, 0, 0).getTime();   // 24 Jul 2026, 12:00 PM
+          // ===== HARDCODED FOR TEST BRANCH =====
+          const startTime = new Date(2026, 5, 24, 12, 0, 0).getTime(); // 24 Jun 2026, 12:00 PM
+          const endTime = new Date(2026, 6, 24, 12, 0, 0).getTime();   // 24 Jul 2026, 12:00 PM
 
-        if (startTime && now < startTime) { router.replace("/instructions"); return; }
-        if (endTime && now > endTime) { router.replace("/instructions"); return; }
-        setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
+          if (startTime && now < startTime) { router.replace("/instructions"); return; }
+          if (endTime && now > endTime) { router.replace("/instructions"); return; }
+          setPerQSeconds(data.perQuestionSeconds ?? FALLBACK_PER_Q_SECONDS);
+        }
+        const qs = await fetchQuestions();
+        if (qs.length === 0) { setQuizState("no-questions"); return; }
+        setQuestions(qs);
+        setAnswers(Array(qs.length).fill(null));
+        questionStartMs.current = Date.now();
+        setQuizState("active");
+      } catch (err) {
+        console.error("Failed to load quiz:", err);
+        setQuizState("closed");
       }
-      const qs = await fetchQuestions();
-      if (qs.length === 0) { setQuizState("no-questions"); return; }
-      setQuestions(qs);
-      setAnswers(Array(qs.length).fill(null));
-      questionStartMs.current = Date.now();
-      setQuizState("active");
-    } catch (err) {
-      console.error("Failed to load quiz:", err);
-      setQuizState("closed");
-    }
-  });
-  return () => unsub();
-}, [router]);
+    });
+    return () => unsub();
+  }, [router]);
 
   const advanceOrFinish = useCallback(async (chosenAnswer: string | null) => {
     if (!uid || questions.length === 0) return;
@@ -265,7 +265,7 @@ export default function QuizPage() {
   // progress. 1st time tab/window is left → show warning. 2nd time →
   // auto-submit and end the quiz.
 
-  
+
   useEffect(() => {
     if (quizState !== "active" || !uid) return;
 
@@ -409,7 +409,11 @@ export default function QuizPage() {
           </div>
 
           <div className="px-6 pb-4 md:px-8">
-            <ProgressBar current={currentIdx + 1} total={questions.length} answered={answeredCount} />
+            <ProgressBar
+              current={currentIdx + 1}
+              total={questions.length}
+              answers={answers}
+            />
           </div>
 
           <div className="w-full h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)" }} />
