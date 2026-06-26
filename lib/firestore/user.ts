@@ -41,7 +41,7 @@ export async function createUser(
       email,
       phone: "",
       college: "",
-      answers: Array(15).fill(null),
+      answers: Array(20).fill(null),
       cumulativeTimeMs: 0,
       totalScore: 0,
       isAttended: false,
@@ -84,7 +84,7 @@ export async function saveAnswer(
   if (!snap.exists()) return;
 
   const data = snap.data() as QuizUser;
-  const existingAnswers = Array.isArray(data.answers) ? data.answers : Array(15).fill(null);
+  const existingAnswers = Array.isArray(data.answers) ? data.answers : Array(20).fill(null);
   const updatedAnswers = [...existingAnswers];
   updatedAnswers[answerIndex] = answer;
 

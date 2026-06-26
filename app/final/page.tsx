@@ -105,7 +105,7 @@ export default function FinalPage() {
     );
   }
 
-  const totalQuestions = user?.answers?.length ?? 15;
+  const totalQuestions = user?.answers?.length ?? 20;
   const answeredCount = user?.answers ? user.answers.filter((a) => a !== null).length : 0;
   const skipped = totalQuestions - answeredCount;
 
